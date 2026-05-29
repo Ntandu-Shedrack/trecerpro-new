@@ -15,6 +15,13 @@ import {
 } from "@/components/ui/table";
 import { Plus, Trash, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Attribute = {
   id: string;
@@ -70,7 +77,7 @@ export function AttributesStep({ categories, onBack, onComplete }: Props) {
   };
 
   return (
-    <Card className="flex flex-col min-h-[600px] py-10 px-6 mx-auto bg-white border shadow-lg shadow-primary/40">
+    <Card className="flex flex-col min-h-[600px] py-10 px-6 mx-auto bg-white border border-slate-200">
       {/* HEADER */}
       <div className="text-center mb-10">
         <h1 className="text-3xl text-slate-900 font-bold">
@@ -139,54 +146,68 @@ export function AttributesStep({ categories, onBack, onComplete }: Props) {
             </Button>
           </div>
 
-          <div className="overflow-x-auto">
-            <Table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto rounded-xl border bg-card shadow-sm">
+            <Table>
+              {/* HEADER */}
               <TableHeader>
-                <TableRow className="bg-slate-50 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
-                  <TableHead className="px-6 py-4">Attribute Name</TableHead>
-                  <TableHead className="px-6 py-4">Data Type</TableHead>
-                  <TableHead className="px-6 py-4 text-center">
+                <TableRow className="bg-muted/40 border-b">
+                  <TableHead className="pl-8 py-4 text-sm font-semibold text-muted-foreground tracking-wide">
+                    Attribute
+                  </TableHead>
+                  <TableHead className="py-4 text-sm font-semibold text-muted-foreground tracking-wide">
+                    Type
+                  </TableHead>
+                  <TableHead className="py-4 text-sm font-semibold text-muted-foreground text-center tracking-wide">
                     Required
                   </TableHead>
-                  <TableHead className="px-6 py-4 text-right">
+                  <TableHead className="pr-8 py-4 text-right text-sm font-semibold text-muted-foreground tracking-wide">
                     Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
 
-              <TableBody className="divide-y divide-slate-200">
+              {/* BODY */}
+              <TableBody>
                 {attributes[activeCategory]?.map((attr) => (
                   <TableRow
                     key={attr.id}
-                    className="hover:bg-slate-50/50 transition-colors"
+                    className="group transition-colors hover:bg-muted/30"
                   >
-                    <TableCell className="px-6 py-4">
+                    {/* ATTRIBUTE NAME */}
+                    <TableCell className="pl-8 py-4">
                       <Input
                         value={attr.name}
-                        className="w-full text-muted border border-muted-foreground/50 bg-transparent focus:border-primary/30 focus:bg-white rounded-md py-1 px-2 text-sm font-medium outline-none"
+                        placeholder="Attribute Name"
                         onChange={(e) =>
                           updateAttribute(attr.id, "name", e.target.value)
                         }
+                        className="h-9 bg-background"
                       />
                     </TableCell>
 
-                    <TableCell className="px-6 py-4">
-                      <select
+                    {/* DATA TYPE */}
+                    <TableCell className="py-4">
+                      <Select
                         value={attr.type}
-                        onChange={(e) =>
-                          updateAttribute(attr.id, "type", e.target.value)
+                        onValueChange={(value) =>
+                          updateAttribute(attr.id, "type", value)
                         }
-                        className="text-sm text-muted bg-slate-100 border-none rounded-sm focus:ring-2 focus:ring-primary w-full py-2 px-3"
                       >
-                        {DATA_TYPES.map((type) => (
-                          <option key={type} value={type}>
-                            {type}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="h-9 bg-background w-[160px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DATA_TYPES.map((type) => (
+                            <SelectItem key={type} value={type}>
+                              {type}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </TableCell>
 
-                    <TableCell className="px-6 py-4 text-center">
+                    {/* REQUIRED */}
+                    <TableCell className="py-4 text-center">
                       <Switch
                         checked={attr.required}
                         onCheckedChange={(val) =>
@@ -195,13 +216,14 @@ export function AttributesStep({ categories, onBack, onComplete }: Props) {
                       />
                     </TableCell>
 
-                    <TableCell className="text-right">
+                    {/* DELETE */}
+                    <TableCell className="pr-8 text-right">
                       <Button
                         size="icon"
                         variant="ghost"
                         onClick={() => deleteAttribute(attr.id)}
                       >
-                        <Trash className="w-4 h-4 text-red-500" />
+                        <Trash className="h-4 w-4 text-muted hover:text-destructive" />
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -209,9 +231,12 @@ export function AttributesStep({ categories, onBack, onComplete }: Props) {
               </TableBody>
             </Table>
 
+            {/* EMPTY STATE */}
             {attributes[activeCategory]?.length === 0 && (
-              <div className="p-8 text-center text-muted-foreground">
-                No attributes added yet.
+              <div className="py-16 text-center">
+                <p className="text-sm text-muted-foreground">
+                  No attributes configured yet.
+                </p>
               </div>
             )}
           </div>
@@ -221,7 +246,11 @@ export function AttributesStep({ categories, onBack, onComplete }: Props) {
       {/* FOOTER */}
       <footer className="sticky bottom-0 mt-10 border-t py-6">
         <div className="flex justify-between items-center">
-          <Button className="text-slate-800" variant="outline" onClick={onBack}>
+          <Button
+            className="text-slate-800 border border-slate-200"
+            variant="ghost"
+            onClick={onBack}
+          >
             Back
           </Button>
 

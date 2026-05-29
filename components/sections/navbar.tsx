@@ -1,10 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ScanBarcode } from "lucide-react";
 
 export default function Navbar() {
+  const pathname = usePathname();
+
+  const links = [
+    { href: "/product", label: "Product" },
+    { href: "/pricing", label: "Pricing" },
+    { href: "/about", label: "About" },
+    { href: "/support", label: "Support" },
+  ];
+
   return (
     <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-sm px-6 md:px-20 py-4">
       <div className="container mx-auto flex items-center justify-between">
@@ -20,10 +30,15 @@ export default function Navbar() {
 
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-10">
-          <NavLink href="/product">Product</NavLink>
-          <NavLink href="/solutions">Solutions</NavLink>
-          <NavLink href="/about">About</NavLink>
-          <NavLink href="/support">Support</NavLink>
+          {links.map((link) => (
+            <NavLink
+              key={link.href}
+              href={link.href}
+              isActive={pathname === link.href}
+            >
+              {link.label}
+            </NavLink>
+          ))}
         </nav>
 
         {/* Actions */}
@@ -36,7 +51,7 @@ export default function Navbar() {
           </Button>
 
           <Button className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 active:scale-95">
-            Get Started
+            <Link href="/sign-up">Get Started</Link>
           </Button>
         </div>
       </div>
@@ -47,14 +62,20 @@ export default function Navbar() {
 function NavLink({
   href,
   children,
+  isActive,
 }: {
   href: string;
   children: React.ReactNode;
+  isActive: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="text-sm font-semibold text-slate-600 hover:text-primary transition-colors"
+      className={`text-sm font-semibold transition-colors ${
+        isActive
+          ? "text-primary border-b-2 border-primary pb-1"
+          : "text-slate-600 hover:text-primary"
+      }`}
     >
       {children}
     </Link>

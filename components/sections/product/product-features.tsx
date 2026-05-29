@@ -1,5 +1,7 @@
 "use client";
 
+import { motion, easeOut } from "framer-motion";
+
 import {
   Card,
   CardHeader,
@@ -7,8 +9,10 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+
 import {
   Boxes,
   Upload,
@@ -20,6 +24,7 @@ import {
   Braces,
   ArrowRight,
 } from "lucide-react";
+
 import { CTASection } from "../cta-section";
 
 const coreFeatures = [
@@ -54,87 +59,130 @@ const advancedFeatures = [
   {
     title: "Real-time Cloud Sync",
     description:
-      "Every scan is instantly synced across your entire organization, ensuring no duplicate entries or missing items.",
+      "Every scan is instantly synced across your entire organization.",
     icon: RefreshCcw,
   },
   {
     title: "Enterprise-Grade Security",
     description:
-      "256-bit AES encryption at rest and in transit. Role-based access control (RBAC) ensures data stays in the right hands.",
+      "256-bit AES encryption and RBAC ensure secure access control.",
     icon: Shield,
   },
   {
     title: "Scalable GraphQL API",
     description:
-      "Connect your ERP, CRM, or custom internal tools using our robust developer-first API layer.",
+      "Connect ERP, CRM, and internal systems through a developer-first API.",
     icon: Braces,
   },
 ];
 
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15 },
+  },
+};
+
+const item = {
+  hidden: { opacity: 0, y: 35 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: easeOut },
+  },
+};
+
 export default function ProductFeatures() {
   return (
     <>
-      {/* ================= CORE FEATURE GRID ================= */}
-      <section className="w-full bg-white md:px-20 py-20">
+      {/* ================= CORE FEATURES ================= */}
+      <section className="w-full bg-white md:px-20 py-20 overflow-hidden">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col gap-4 mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex flex-col gap-4 mb-12"
+          >
             <h2 className="text-3xl text-slate-900 font-bold tracking-tight">
               Core Enterprise Capabilities
             </h2>
+
             <p className="text-muted text-lg max-w-2xl">
               Everything you need to manage your asset lifecycle with
               confidence, transparency, and speed.
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <motion.div
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          >
             {coreFeatures.map((feature, index) => {
               const Icon = feature.icon;
 
               return (
-                <Card
-                  key={index}
-                  className="group transition-all border border-slate-300 rounded-lg hover:shadow-xl bg-white hover:border-primary/40"
-                >
-                  <CardHeader className="group flex flex-col space-y-4">
-                    <div className="hover:border-primary/50 transition-all hover:shadow-xl hover:shadow-primary/5">
-                      <Icon className="w-12 h-12 bg-primary/7 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors" />
-                    </div>
+                <motion.div key={index} variants={item} whileHover={{ y: -8 }}>
+                  <Card className="group border border-slate-300 rounded-lg hover:shadow-xl bg-white hover:border-primary/40 transition-all">
+                    <CardHeader className="flex flex-col space-y-4">
+                      <motion.div
+                        whileHover={{ scale: 1.08, rotate: 3 }}
+                        className="w-fit"
+                      >
+                        <Icon className="w-12 h-12 bg-primary/7 rounded-lg text-primary group-hover:bg-primary group-hover:text-white transition-colors" />
+                      </motion.div>
 
-                    <div>
-                      <div className="flex items-center text-slate-900 gap-2">
-                        <CardTitle>{feature.title}</CardTitle>
-                        {feature.badge && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-primary/20 text-primary text-[10px] uppercase font-bold px-2 py-0.5 rounded"
-                          >
-                            {feature.badge}
-                          </Badge>
-                        )}
+                      <div>
+                        <div className="flex items-center text-slate-900 gap-2">
+                          <CardTitle>{feature.title}</CardTitle>
+
+                          {feature.badge && (
+                            <Badge className="bg-primary/20 text-primary text-[10px] uppercase font-bold px-2 py-0.5 rounded">
+                              {feature.badge}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
 
-                  <CardContent>
-                    <CardDescription className="text-muted">
-                      {feature.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
+                    <CardContent>
+                      <CardDescription className="text-muted">
+                        {feature.description}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* ================= DETAILED RELIABILITY SECTION ================= */}
-      <section className="bg-white py-20 px-6 md:px-20">
-        <div className="container mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          {/* Dashboard Mockup */}
-          <div className="order-2 lg:order-1">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border bg-background">
-              <div className="h-80 w-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/60">
+      {/* ================= RELIABILITY SECTION ================= */}
+      <section className="bg-white py-20 px-6 md:px-20 overflow-hidden">
+        <div className="container mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          {/* Dashboard */}
+          <motion.div
+            initial={{ opacity: 0, x: -60 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+            className="order-2 lg:order-1"
+          >
+            <motion.div
+              animate={{ y: [0, -10, 0] }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut",
+              }}
+              className="relative rounded-2xl overflow-hidden shadow-2xl border bg-background"
+            >
+              <div className="h-80 flex items-center justify-center bg-gradient-to-br from-muted to-muted/60">
                 <LayoutDashboard className="h-20 w-20 text-primary/20" />
               </div>
 
@@ -145,15 +193,27 @@ export default function ProductFeatures() {
                     Live Sync Active
                   </span>
                 </div>
+
                 <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary w-2/3" />
+                  <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "66%" }}
+                    transition={{ duration: 1 }}
+                    className="h-full bg-primary"
+                  />
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
-          {/* Feature Highlights */}
-          <div className="order-1 lg:order-2 flex flex-col gap-8">
+          {/* Features List */}
+          <motion.div
+            variants={container}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+            className="order-1 lg:order-2 flex flex-col gap-8"
+          >
             <h2 className="text-3xl text-slate-900 font-bold leading-tight">
               Advanced Platform Reliability
             </h2>
@@ -161,33 +221,41 @@ export default function ProductFeatures() {
             <div className="space-y-6">
               {advancedFeatures.map((feature, index) => {
                 const Icon = feature.icon;
+
                 return (
-                  <div key={index} className="flex gap-4">
+                  <motion.div
+                    key={index}
+                    variants={item}
+                    className="flex gap-4"
+                  >
                     <div className="text-primary mt-1">
                       <Icon className="h-5 w-5" />
                     </div>
+
                     <div>
                       <h4 className="font-semibold text-slate-900 text-xl">
                         {feature.title}
                       </h4>
+
                       <p className="text-sm text-muted-foreground">
                         {feature.description}
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
 
-            <div>
+            <motion.div variants={item}>
               <Button variant="link" className="px-0 font-semibold">
                 Explore all integrations
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
+
       <CTASection />
     </>
   );

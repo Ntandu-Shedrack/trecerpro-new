@@ -27,7 +27,7 @@ export function CategoriesStep({ initialCategories, onNext, onBack }: Props) {
   };
 
   return (
-    <Card className="max-w-4xl py-10 px-6 mx-auto bg-white border shadow-lg shadow-primary/40">
+    <Card className="max-w-4xl py-10 px-6 mx-auto bg-white border border-slate-200">
       <CardContent className="space-y-6 p-10">
         <div className="text-center">
           <h1 className="text-2xl text-slate-900 font-bold">
@@ -71,7 +71,11 @@ export function CategoriesStep({ initialCategories, onNext, onBack }: Props) {
         </div>
       </CardContent>
       <CardFooter className="flex items-center justify-between gap-3 p-6 border-t">
-        <Button className="text-slate-800" variant="outline" onClick={onBack}>
+        <Button
+          className="text-slate-800 border border-slate-200"
+          variant="ghost"
+          onClick={onBack}
+        >
           Back
         </Button>
 
