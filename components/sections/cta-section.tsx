@@ -27,16 +27,14 @@ const item = {
 
 export function CTASection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-dot-grid px-4 md:px-6">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto">
+    <section className="py-24 bg-background md:px-20 overflow-hidden">
+      <div className="container mx-auto px-6">
         <motion.div
           variants={container}
           initial="hidden"
           whileInView="show"
           viewport={{ once: true }}
-          className="relative overflow-hidden rounded-[2.5rem] glass-card px-8 py-16 text-center md:p-20 shadow-2xl bg-gradient-to-br from-primary/10 via-indigo-500/5 to-zinc-950/10 border border-border/40"
+          className="relative overflow-hidden rounded-3xl bg-primary/5 px-8 py-16 text-center md:p-20"
         >
           {/* Decorative Background Shapes */}
           <div className="pointer-events-none absolute inset-0 opacity-10">
@@ -47,7 +45,7 @@ export function CTASection() {
                 repeat: Infinity,
                 ease: "linear",
               }}
-              className="absolute -right-1/4 -top-1/4 h-[600px] w-[600px] rounded-full border-[40px] border-primary blur-sm"
+              className="absolute -right-1/4 -top-1/4 h-[600px] w-[600px] rounded-full border-[40px] border-primary"
             />
 
             <motion.div
@@ -57,7 +55,7 @@ export function CTASection() {
                 repeat: Infinity,
                 ease: "easeInOut",
               }}
-              className="absolute -bottom-1/4 -left-1/4 h-64 w-64 rounded-full bg-primary blur-md"
+              className="absolute -bottom-1/4 -left-1/4 h-64 w-64 rounded-full bg-primary"
             />
           </div>
 
@@ -65,14 +63,14 @@ export function CTASection() {
           <div className="relative z-10 mx-auto max-w-2xl space-y-6">
             <motion.h2
               variants={item}
-              className="text-3xl md:text-5xl font-black text-foreground tracking-tight leading-tight"
+              className="text-4xl font-extrabold text-foreground tracking-tight md:text-5xl"
             >
-              Ready to track your assets with <span className="text-gradient">precision?</span>
+              Ready to track your assets with precision?
             </motion.h2>
 
             <motion.p
               variants={item}
-              className="text-base md:text-lg font-medium text-muted-foreground leading-relaxed max-w-lg mx-auto"
+              className="text-lg font-medium text-muted-foreground md:text-xl"
             >
               Join over 500+ enterprises managing millions of assets globally.
               Get started for free today.
@@ -80,22 +78,22 @@ export function CTASection() {
 
             <motion.div
               variants={item}
-              className="flex flex-col items-center justify-center gap-4 sm:flex-row pt-4"
+              className="flex flex-col items-center justify-center gap-4 sm:flex-row"
             >
-              <motion.div whileHover={{ scale: 1.05 }} className="w-full sm:w-auto">
+              <motion.div whileHover={{ scale: 1.06 }}>
                 <Button
                   size="lg"
-                  className="w-full bg-primary hover:bg-primary/95 text-primary-foreground font-bold shadow-md shadow-primary/10 rounded-full px-10 h-14 active:scale-95 transition-transform"
+                  className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl px-10"
                 >
                   Start Free Trial
                 </Button>
               </motion.div>
 
-              <motion.div whileHover={{ scale: 1.05 }} className="w-full sm:w-auto">
+              <motion.div whileHover={{ scale: 1.06 }}>
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto border-border/80 bg-background/20 backdrop-blur-sm text-foreground hover:bg-muted font-bold rounded-full px-10 h-14 active:scale-95 transition-transform"
+                  className="w-full sm:w-auto border-primary/40 bg-transparent text-primary hover:bg-primary/10 rounded-xl px-10"
                 >
                   Request Custom Demo
                 </Button>

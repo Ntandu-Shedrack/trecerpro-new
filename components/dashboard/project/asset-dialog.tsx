@@ -1,0 +1,374 @@
+"use client";
+
+import * as React from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { createAsset, updateAsset } from "@/actions/asset.actions";
+import type { AssetWithCategory, Category, CategoryAttribute } from "@/types";
+import { toast } from "sonner";
+import { Box, Settings2, FileText, Layers, Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { mapLaravelValidationErrors } from "@/lib/api/client";
+
+interface AssetDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  projectId: string;
+  categories: Category[];
+  editingAsset: AssetWithCategory | null;
+  onSuccess: () => void;
+}
+
+function buildDynamicSchema(attributes: CategoryAttribute[]) {
+  const shape: Record<string, z.ZodTypeAny> = {};
+  
+  attributes.forEach((attr) => {
+    let fieldSchema: z.ZodTypeAny;
+
+    if (attr.type === "number") {
+      fieldSchema = z.coerce.number({
+        message: `${attr.label} must be a number`,
+      });
+    } else if (attr.type === "boolean") {
+      fieldSchema = z.boolean();
+    } else {
+      fieldSchema = z.string();
+    }
+
+    if (attr.required) {
+      if (attr.type === "number") {
+        fieldSchema = (fieldSchema as z.ZodNumber).min(0.0001, `${attr.label} is required`);
+      } else if (attr.type === "boolean") {
+        fieldSchema = (fieldSchema as z.ZodBoolean);
+      } else {
+        fieldSchema = (fieldSchema as z.ZodString).min(1, `${attr.label} is required`);
+      }
+    } else {
+      if (attr.type === "boolean") {
+        fieldSchema = fieldSchema.default(false);
+      } else {
+        fieldSchema = fieldSchema.optional().nullable().or(z.literal(""));
+      }
+    }
+
+    shape[attr.name] = fieldSchema;
+  });
+
+  return z.object({
+    name: z.string().min(1, "Asset identifier is required").max(255),
+    description: z.string().optional(),
+    values: z.object(shape),
+  });
+}
+
+export default function AssetDialog({
+  open,
+  onOpenChange,
+  projectId,
+  categories,
+  editingAsset,
+  onSuccess
+}: AssetDialogProps) {
+  const [loading, setLoading] = React.useState(false);
+  const [categoryId, setCategoryId] = React.useState<string>("");
+
+  const selectedCategory = React.useMemo(() => {
+    return categories.find((c) => c.id === categoryId);
+  }, [categoryId, categories]);
+
+  const dynamicSchema = React.useMemo(() => {
+    return buildDynamicSchema(selectedCategory?.attributes || []);
+  }, [selectedCategory]);
+
+  const form = useForm<any>({
+    resolver: zodResolver(dynamicSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      values: {},
+    },
+  });
+
+  React.useEffect(() => {
+    if (editingAsset) {
+      setCategoryId(String(editingAsset.category_id));
+      form.reset({
+        name: editingAsset.name,
+        description: editingAsset.description || "",
+        values: editingAsset.values || {},
+      });
+    } else {
+      setCategoryId("");
+      form.reset({
+        name: "",
+        description: "",
+        values: {},
+      });
+    }
+  }, [editingAsset, open, form]);
+
+  const handleCategoryChange = (newCategoryId: string) => {
+    setCategoryId(newCategoryId);
+    const category = categories.find(c => c.id === newCategoryId);
+    const initialValues: Record<string, any> = {};
+    
+    category?.attributes.forEach(attr => {
+      if (attr.type === "boolean") {
+        initialValues[attr.name] = false;
+      } else {
+        initialValues[attr.name] = "";
+      }
+    });
+    
+    form.setValue("values", initialValues);
+  };
+
+  const onSubmit = async (values: any) => {
+    if (!categoryId) {
+      toast.error("Please select a category");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const formData = {
+        projectId,
+        categoryId,
+        name: values.name,
+        description: values.description,
+        values: values.values,
+      };
+
+      let res;
+      if (editingAsset) {
+        res = await updateAsset(String(editingAsset.id), formData);
+      } else {
+        res = await createAsset(formData);
+      }
+
+      if (res.error) {
+        if (typeof res.error === "object" && res.error.errors) {
+          mapLaravelValidationErrors(res.error.errors, form.setError);
+        } else {
+          toast.error(res.error);
+        }
+      } else {
+        toast.success(editingAsset ? "Asset updated successfully" : "Asset created successfully");
+        onSuccess();
+      }
+    } catch (err) {
+      toast.error("An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[700px] border-slate-800 bg-slate-950 text-foreground overflow-hidden flex flex-col p-0 h-[85vh] sm:h-auto sm:max-h-[90vh] shadow-2xl">
+        <div className="p-8 pb-0">
+          <DialogHeader className="mb-6">
+            <div className="flex items-center gap-4">
+               <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shadow-inner">
+                  <Box className="h-6 w-6 text-primary" />
+               </div>
+               <div className="space-y-1">
+                <DialogTitle className="text-2xl font-extrabold tracking-tight text-white">
+                  {editingAsset ? "Edit Asset Details" : "Register New Asset"}
+                </DialogTitle>
+                <DialogDescription className="text-slate-400 font-medium flex items-center gap-1.5">
+                  <Settings2 className="h-3.5 w-3.5" />
+                  {editingAsset 
+                    ? "Update lifecycle information and technical specifications." 
+                    : "Initialize a new asset catalog entry into your inventory system."}
+                </DialogDescription>
+               </div>
+            </div>
+          </DialogHeader>
+        </div>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
+            <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
+              {/* General Information Section */}
+              <div className="space-y-6">
+                 <div className="flex items-center gap-2 mb-2">
+                   <div className="h-px flex-1 bg-slate-800" />
+                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 px-2 whitespace-nowrap">Identity Information</span>
+                   <div className="h-px flex-1 bg-slate-800" />
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <FormField
+                     control={form.control}
+                     name="name"
+                     render={({ field }) => (
+                       <FormItem>
+                         <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Asset Identifier</FormLabel>
+                         <FormControl>
+                           <div className="relative group">
+                             <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500 group-focus-within:text-primary transition-colors" />
+                             <Input
+                               placeholder="e.g., TRACER-2024-X1"
+                               className="pl-10 bg-slate-900 border-slate-800 focus:bg-slate-950 h-11 text-sm font-semibold text-white shadow-inner"
+                               {...field}
+                             />
+                           </div>
+                         </FormControl>
+                         <FormMessage />
+                       </FormItem>
+                     )}
+                   />
+
+                   <div className="space-y-2">
+                     <Label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Asset Classification</Label>
+                     <Select value={categoryId} onValueChange={handleCategoryChange} disabled={!!editingAsset}>
+                       <SelectTrigger className="bg-slate-900 border-slate-800 focus:bg-slate-950 h-11 text-sm font-semibold text-white shadow-inner">
+                          <div className="flex items-center gap-2">
+                             <Layers className="h-4 w-4 text-slate-500" />
+                             <SelectValue placeholder="Select classification" />
+                          </div>
+                       </SelectTrigger>
+                       <SelectContent className="bg-slate-950 border-slate-800 text-foreground">
+                         {categories.map((category) => (
+                           <SelectItem key={category.id} value={String(category.id)} className="cursor-pointer font-medium p-3">
+                              <div className="flex flex-col">
+                                 <span className="font-bold text-white">{category.name}</span>
+                                 <span className="text-[10px] text-slate-405 line-clamp-1">{category.description || "System standard category"}</span>
+                              </div>
+                           </SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
+                   </div>
+                 </div>
+
+                 <FormField
+                   control={form.control}
+                   name="description"
+                   render={({ field }) => (
+                     <FormItem>
+                       <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-400 ml-1">Lifecycle Description</FormLabel>
+                       <FormControl>
+                         <Textarea
+                           placeholder="Summarize the asset's purpose or current state..."
+                           className="bg-slate-900 border-slate-800 focus:bg-slate-950 resize-none h-24 text-sm font-medium p-4 leading-relaxed text-white shadow-inner"
+                           {...field}
+                         />
+                       </FormControl>
+                       <FormMessage />
+                     </FormItem>
+                   )}
+                 />
+              </div>
+
+              {/* Specifications Section */}
+              {selectedCategory && (
+                <div className="space-y-6 pt-2 pb-6">
+                  <div className="flex items-center gap-4 mb-2">
+                     <div className="h-px flex-1 bg-slate-800" />
+                     <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/20 shadow-sm">
+                        <Settings2 className="h-3 w-3 text-primary/70" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80 whitespace-nowrap">Technical Specs</span>
+                     </div>
+                     <div className="h-px flex-1 bg-slate-800" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 bg-slate-900/20 p-8 rounded-3xl border border-slate-800 relative overflow-hidden">
+                    {selectedCategory.attributes.map((attr) => (
+                      <FormField
+                        key={attr.name}
+                        control={form.control}
+                        name={`values.${attr.name}`}
+                        render={({ field }) => (
+                          <FormItem className="space-y-2">
+                            <FormLabel className="text-[11px] font-black tracking-widest text-slate-300 uppercase flex items-center gap-2">
+                              {attr.label || attr.name}
+                              {attr.required && <span className="text-destructive animate-pulse">*</span>}
+                            </FormLabel>
+                            
+                            <FormControl>
+                              {attr.type === "select" ? (
+                                <Select
+                                  value={field.value || ""}
+                                  onValueChange={field.onChange}
+                                >
+                                  <SelectTrigger className="h-10 bg-slate-900 border-slate-800 font-bold text-xs text-white">
+                                    <SelectValue placeholder={`Choose ${attr.label || attr.name}`} />
+                                  </SelectTrigger>
+                                  <SelectContent className="bg-slate-950 border-slate-800 text-foreground">
+                                    {attr.options?.map((opt) => (
+                                      <SelectItem key={opt} value={opt} className="font-semibold text-xs text-white cursor-pointer">
+                                        {opt}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              ) : attr.type === "boolean" ? (
+                                <div className="flex items-center gap-4 h-10 cursor-pointer" onClick={() => field.onChange(!field.value)}>
+                                  <Switch
+                                    checked={!!field.value}
+                                    onCheckedChange={field.onChange}
+                                    className="data-[state=checked]:bg-primary"
+                                  />
+                                  <span className="text-xs font-bold text-slate-400">
+                                    {field.value ? "Enabled" : "Disabled"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <Input
+                                  type={attr.type === "number" ? "number" : attr.type === "date" ? "date" : "text"}
+                                  placeholder={`Enter ${(attr.label || attr.name).toLowerCase()}...`}
+                                  className="h-10 bg-slate-900 border-slate-800 font-bold text-xs text-white"
+                                  {...field}
+                                />
+                              )}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+
+                    {selectedCategory.attributes.length === 0 && (
+                       <div className="col-span-2 py-8 flex flex-col items-center justify-center text-center space-y-2 opacity-50">
+                          <Box className="h-8 w-8 text-slate-500" />
+                          <p className="text-xs font-bold text-slate-500">No specific attributes defined for this category.</p>
+                       </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-8 pt-4">
+              <DialogFooter className="gap-4 pt-6 border-t border-slate-800">
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading} className="px-6 font-bold text-slate-400 hover:text-white transition-all">
+                  Close
+                </Button>
+                <Button type="submit" disabled={loading || !categoryId} className="px-10 h-11 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    editingAsset ? "Commit Changes" : "Create Asset"
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}

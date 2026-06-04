@@ -55,23 +55,21 @@ const item = {
 
 export function HowItWorksSection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-dot-grid">
-      <div className="absolute top-10 right-10 w-72 h-72 bg-indigo-500/5 rounded-full blur-[80px] -z-10" />
-
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
+    <section className="bg-background py-24 overflow-hidden">
+      <div className="container mx-auto px-6 md:px-12">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="mb-20 space-y-4 text-center"
+          className="mb-16 space-y-4 text-center"
         >
-          <h2 className="text-3xl md:text-5xl font-black text-foreground tracking-tight">
+          <h2 className="text-3xl font-extrabold text-foreground tracking-tight md:text-4xl">
             How TracerPro Works
           </h2>
-          <p className="mx-auto max-w-2xl text-base md:text-lg text-muted-foreground font-medium">
-            Four simple steps to total organizational control over your inventory.
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
+            Four simple steps to total organizational control.
           </p>
         </motion.div>
 
@@ -83,6 +81,14 @@ export function HowItWorksSection() {
           viewport={{ once: true }}
           className="relative grid gap-8 md:grid-cols-2 lg:grid-cols-4"
         >
+          {/* Desktop Connecting Line */}
+          <motion.div
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            transition={{ duration: 1 }}
+            className="absolute left-0 top-1/2 hidden h-0.5 w-full -translate-y-12 bg-border origin-left lg:block"
+          />
+
           {steps.map((step, index) => {
             const Icon = step.icon;
 
@@ -90,25 +96,24 @@ export function HowItWorksSection() {
               <motion.div
                 key={index}
                 variants={item}
-                className="relative"
+                whileHover={{ y: -8 }}
+                transition={{ type: "spring", stiffness: 200 }}
               >
-                <Card className="glass-card glass-card-hover relative z-10 rounded-3xl shadow-sm border border-border/40 overflow-hidden">
-                  {/* Step Indicator Badge */}
-                  <div className="absolute top-4 right-6 text-2xl font-black text-muted-foreground/15 select-none">
-                    0{index + 1}
-                  </div>
-
+                <Card className="relative z-10 rounded-2xl border bg-primary/4 shadow-sm hover:border-primary/50 hover:shadow-xl transition-all">
                   <CardContent className="flex flex-col items-center gap-6 p-8 text-center">
                     {/* Icon */}
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary shadow-sm shadow-primary/5">
-                      <Icon className="h-6 w-6" />
-                    </div>
+                    <motion.div
+                      whileHover={{ scale: 1.1, rotate: 3 }}
+                      className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                    >
+                      <Icon className="h-7 w-7" />
+                    </motion.div>
 
                     <div>
-                      <h3 className="mb-2 text-lg text-foreground font-bold">
+                      <h3 className="mb-2 text-xl text-foreground font-bold">
                         {step.title}
                       </h3>
-                      <p className="text-xs leading-relaxed text-muted-foreground font-medium">
+                      <p className="text-sm leading-relaxed text-muted-foreground">
                         {step.description}
                       </p>
                     </div>

@@ -1,7 +1,7 @@
 "use server";
 
 import { AppHeader } from "@/components/sidebar/app-header";
-import { AppSidebar } from "@/components/sidebar/app-sidebar";
+import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default async function DashboardLayout({

@@ -49,13 +49,15 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(98.809% 0.00011 271.152); /* ≈ #f6f7f8 */
+  --background: oklch(98.809% 0.00011 271.152);
+  /* ≈ #f6f7f8 */
   --foreground: oklch(0.18 0.01 250);
   --card: oklch(1 0 0);
   --card-foreground: var(--foreground);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.64 0.21 250); /* ≈ #137fec */
+  --primary: oklch(0.64 0.21 250);
+  /* ≈ #137fec */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.96 0 0);
   --secondary-foreground: oklch(0.22 0 0);
@@ -84,7 +86,8 @@
 
 .dark {
   /* BACKGROUND */
-  --background: oklch(20.499% 0.03828 251.531); /* ≈ #101922 */
+  --background: oklch(20.499% 0.03828 251.531);
+  /* ≈ #101922 */
   --foreground: oklch(0.98 0 0);
 
   --card: oklch(22.008% 0.06782 255.363);
@@ -128,88 +131,8 @@
   0% {
     transform: translateX(-120%);
   }
+
   100% {
     transform: translateX(120%);
   }
 }
-
-/* Redesign keyframes and variables */
-@keyframes float-aurora-1 {
-  0%, 100% {
-    transform: translate(0px, 0px) scale(1);
-  }
-  50% {
-    transform: translate(40px, -60px) scale(1.12);
-  }
-}
-
-@keyframes float-aurora-2 {
-  0%, 100% {
-    transform: translate(0px, 0px) scale(1.1);
-  }
-  50% {
-    transform: translate(-50px, 50px) scale(0.9);
-  }
-}
-
-@keyframes float-aurora-3 {
-  0%, 100% {
-    transform: translate(0px, 0px) scale(0.95);
-  }
-  50% {
-    transform: translate(30px, 30px) scale(1.08);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.animate-aurora-1 {
-  animation: float-aurora-1 20s infinite alternate ease-in-out;
-}
-
-.animate-aurora-2 {
-  animation: float-aurora-2 25s infinite alternate ease-in-out;
-}
-
-.animate-aurora-3 {
-  animation: float-aurora-3 22s infinite alternate ease-in-out;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 8s infinite ease-in-out;
-}
-
-.bg-dot-grid {
-  background-image: radial-gradient(color-mix(in oklch, var(--border) 40%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-}
-
-.glass-card {
-  background: color-mix(in oklch, var(--card) 45%, transparent);
-  backdrop-filter: blur(20px);
-  border: 1px solid color-mix(in oklch, var(--border) 40%, transparent);
-}
-
-.glass-card-hover {
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.glass-card-hover:hover {
-  transform: translateY(-5px);
-  border-color: color-mix(in oklch, var(--primary) 35%, transparent);
-  box-shadow: 
-    0 20px 40px -15px rgba(0, 0, 0, 0.08),
-    0 0 30px 2px color-mix(in oklch, var(--primary) 6%, transparent);
-}
-
-.text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-indigo-400 to-violet-500;
-}
-

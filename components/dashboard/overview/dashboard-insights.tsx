@@ -95,7 +95,7 @@ export function DashboardInsights() {
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value?: number | string, name?: string) => {
+                  formatter={(value: any, name: any) => {
                     const v =
                       typeof value === "number" ? value : Number(value ?? 0);
                     return [v.toLocaleString(), name ?? ""] as [string, string];

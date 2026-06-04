@@ -1,33 +1,26 @@
-import { motion } from "framer-motion";
+"use client";
 
 const stats = [
   { value: "99.9%", label: "Tracking Accuracy" },
-  { value: "1.2M+", label: "Assets Managed" },
-  { value: "500+", label: "Global Clients" },
-  { value: "0.4s", label: "Ping Latency" },
+  { value: "1M+", label: "Assets Managed" },
+  { value: "500+", label: "Global Institutions" },
+  { value: "15s", label: "Avg. Audit Time" },
 ];
 
 export default function StatsBar() {
   return (
-    <section className="w-full px-4 md:px-6 py-8 bg-dot-grid">
-      <div className="max-w-7xl mx-auto glass-card rounded-3xl p-8 shadow-sm">
+    <section className="py-12 bg-background md:px-20">
+      <div className="container mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.08, type: "spring", stiffness: 100 }}
-              className="flex flex-col gap-1.5"
-            >
-              <span className="text-2xl md:text-4xl font-black text-primary tracking-tight">
+            <div key={index} className="flex flex-col gap-1">
+              <span className="text-3xl font-black text-primary">
                 {stat.value}
               </span>
-              <span className="text-[10px] md:text-xs font-bold text-muted-foreground uppercase tracking-widest">
+              <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
                 {stat.label}
               </span>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

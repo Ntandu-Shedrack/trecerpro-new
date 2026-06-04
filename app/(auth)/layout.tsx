@@ -6,7 +6,7 @@ export default async function AuthPagesLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full min-h-screen bg-background relative overflow-hidden bg-dot-grid">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
       {children}
     </div>
   );

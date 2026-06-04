@@ -28,7 +28,7 @@ const item = {
 
 export default function AboutHero() {
   return (
-    <section className="relative overflow-hidden hero-gradient bg-white md:px-20 py-24">
+    <section className="relative overflow-hidden hero-gradient bg-background md:px-20 py-24">
       <div className="container px-6 mx-auto">
         {/* Animated Background Pattern */}
         <motion.div
@@ -61,7 +61,7 @@ export default function AboutHero() {
 
           <motion.h1
             variants={item}
-            className="text-5xl md:text-6xl font-black text-slate-900 leading-[1.1] tracking-tight mb-8"
+            className="text-5xl md:text-6xl font-black text-foreground leading-[1.1] tracking-tight mb-8"
           >
             Empowering institutions to master physical inventory with{" "}
             <span className="text-primary">scan-and-go</span> simplicity.
@@ -69,7 +69,7 @@ export default function AboutHero() {
 
           <motion.p
             variants={item}
-            className="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed mb-10"
+            className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-10"
           >
             TracerPro redefines enterprise asset management by providing a
             seamless, reliable, and scalable barcode-based solution for the
@@ -93,7 +93,7 @@ export default function AboutHero() {
               <Button
                 size="lg"
                 variant="outline"
-                className="min-w-[180px] h-12 px-8 font-bold text-slate-900 hover:bg-slate-50"
+                className="min-w-[180px] h-12 px-8 font-bold text-foreground hover:bg-muted"
               >
                 View Product Demo
               </Button>

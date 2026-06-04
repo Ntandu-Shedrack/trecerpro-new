@@ -70,31 +70,28 @@ const item = {
 
 export function FeaturesSection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-dot-grid">
-      {/* Decorative Blur */}
-      <div className="absolute top-1/2 left-0 w-80 h-80 bg-primary/5 rounded-full blur-[100px] -z-10" />
-
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="flex flex-col gap-16 lg:flex-row items-start">
+    <section className="py-24 bg-background overflow-hidden">
+      <div className="container mx-auto px-6 md:px-12">
+        <div className="flex flex-col gap-16 lg:flex-row">
           {/* LEFT COLUMN */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 40 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
-            className="lg:w-1/3 flex flex-col gap-8 lg:sticky lg:top-28"
+            className="lg:w-1/3 flex flex-col gap-6"
           >
-            <h2 className="text-3xl md:text-5xl font-black text-foreground leading-[1.15] tracking-tight">
-              Engineered for <span className="text-gradient">Efficiency.</span>
+            <h2 className="text-4xl text-foreground md:text-5xl font-extrabold leading-tight tracking-tight">
+              Engineered for Efficiency.
             </h2>
 
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed font-medium">
+            <p className="text-lg text-muted-foreground leading-relaxed">
               TracerPro was built by logistics experts for complex enterprise
-              environments. We focus on the data details so you can run the
-              business smoothly.
+              environments. We focus on the data so you can focus on the
+              business.
             </p>
 
-            <Separator className="bg-border/60" />
+            <Separator />
 
             <div className="space-y-4">
               {highlights.map((item, index) => (
@@ -102,20 +99,18 @@ export function FeaturesSection() {
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.08 }}
+                  transition={{ delay: index * 0.1 }}
                   viewport={{ once: true }}
                   className="flex items-center gap-3"
                 >
-                  <div className="bg-emerald-500/10 p-1 rounded-full border border-emerald-500/20 text-emerald-500">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-                  <span className="font-bold text-muted-foreground text-sm">{item}</span>
+                  <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  <span className="font-semibold text-muted-foreground/90">{item}</span>
                 </motion.div>
               ))}
             </div>
           </motion.div>
 
-          {/* RIGHT BENTO GRID */}
+          {/* RIGHT GRID */}
           <motion.div
             variants={container}
             initial="hidden"
@@ -123,74 +118,32 @@ export function FeaturesSection() {
             viewport={{ once: true }}
             className="lg:w-2/3 grid grid-cols-1 sm:grid-cols-2 gap-6"
           >
-            {/* Bento Card 1 - WIDE FEATURE (Simulated Graph) */}
-            <motion.div
-              variants={item}
-              className="sm:col-span-2"
-            >
-              <Card className="glass-card glass-card-hover rounded-3xl border border-border/40 overflow-hidden bg-gradient-to-br from-primary/10 via-indigo-500/5 to-transparent">
-                <CardContent className="p-8 md:p-10 flex flex-col md:flex-row gap-8 items-center">
-                  <div className="space-y-4 md:w-1/2">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/20 text-primary">
-                      <BarChart3 className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-xl text-foreground font-black tracking-tight">
-                      99.98% Real-Time Tracking Uptime
-                    </h3>
-                    <p className="text-xs leading-relaxed text-muted-foreground font-medium">
-                      Eliminate equipment errors with automated barcode checksum validation, live mapping, and instant status synchronizations.
-                    </p>
-                  </div>
-
-                  {/* Simulated telemetry bar chart */}
-                  <div className="w-full md:w-1/2 bg-white/5 rounded-2xl border border-white/5 p-5 flex flex-col gap-4">
-                    <div className="flex items-center justify-between text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
-                      <span>Live Traffic Load</span>
-                      <span className="text-green-400">Excellent</span>
-                    </div>
-                    <div className="flex items-end justify-between h-20 px-2 gap-2">
-                      {[30, 45, 35, 60, 85, 40, 75, 90, 55, 65].map((val, i) => (
-                        <div key={i} className="flex-1 bg-primary/20 hover:bg-primary/40 rounded-t-sm transition-all relative group" style={{ height: `${val}%` }}>
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 bg-zinc-950 text-white text-[8px] font-bold px-1 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                            {val}%
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-between text-[9px] text-zinc-500 font-bold">
-                      <span>00:00</span>
-                      <span>12:00</span>
-                      <span>24:00</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            {/* Standard Bento Cards */}
-            {features.slice(1).map((feature, index) => {
+            {features.map((feature, index) => {
               const Icon = feature.icon;
 
               return (
                 <motion.div
                   key={index}
                   variants={item}
+                  whileHover={{ y: -8 }}
+                  transition={{ type: "spring", stiffness: 200 }}
                 >
-                  <Card className="glass-card glass-card-hover rounded-3xl border border-border/40 h-full">
-                    <CardContent className="p-8 flex flex-col justify-between h-full min-h-[220px]">
-                      <div className="space-y-4">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20 text-primary">
-                          <Icon className="h-5 w-5" />
-                        </div>
+                  <Card className="group rounded-2xl border bg-primary/4 hover:border-primary/50 hover:shadow-xl transition-all">
+                    <CardContent className="p-8">
+                      <motion.div
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        className="mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                      >
+                        <Icon className="h-6 w-6" />
+                      </motion.div>
 
-                        <h3 className="text-base text-foreground font-bold">
-                          {feature.title}
-                        </h3>
+                      <h3 className="mb-3 text-xl text-foreground font-bold">
+                        {feature.title}
+                      </h3>
 
-                        <p className="text-xs leading-relaxed text-muted-foreground font-medium">
-                          {feature.description}
-                        </p>
-                      </div>
+                      <p className="leading-relaxed text-muted-foreground">
+                        {feature.description}
+                      </p>
                     </CardContent>
                   </Card>
                 </motion.div>

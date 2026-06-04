@@ -1,38 +1,23 @@
-import { ProjectsGrid } from "@/components/dashboard/projects/projects-grid";
-import { ProjectsHeader } from "@/components/dashboard/projects/projects-header";
+import { getProjects } from "@/actions/project.actions";
+import { getSession } from "@/lib/auth/session";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { ProjectsView } from "@/components/dashboard/projects/projects-view";
 
-const projects: Array<{
-  id: string;
-  name: string;
-  description: string;
-  status: "Active" | "Completed" | "On-Hold";
-  progress: number;
-  owner: string;
-  assets: number;
-  members: Array<{ id: string; avatar: string }>;
-}> = [
-  {
-    id: "1",
-    name: "Cloud Infrastructure Migration",
-    description: "Scaling the core API services to multi-region AWS setup.",
-    status: "Active",
-    progress: 68,
-    owner: "Sarah Jenkins",
-    assets: 142,
-    members: [
-      { id: "1", avatar: "/avatars/1.png" },
-      { id: "2", avatar: "/avatars/2.png" },
-      { id: "3", avatar: "/avatars/3.png" },
-      { id: "4", avatar: "/avatars/4.png" },
-    ],
-  },
-];
+export default async function ProjectsPage() {
+  const cookieStore = await cookies();
+  let orgId = cookieStore.get("active_organization_id")?.value;
 
-export default function DashboardOverviewPage() {
-  return (
-    <>
-      <ProjectsHeader />
-      <ProjectsGrid projects={projects} />
-    </>
-  );
+  if (!orgId) {
+    const session = await getSession();
+    orgId = session.orgId ?? undefined;
+  }
+
+  if (!orgId) {
+    redirect("/onboarding");
+  }
+
+  const { data: projects } = await getProjects(orgId);
+
+  return <ProjectsView initialProjects={projects || []} organizationId={orgId} />;
 }

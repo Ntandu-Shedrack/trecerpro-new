@@ -1,7 +1,7 @@
 import { TableRow, TableCell } from "@/components/ui/table";
 import { MoreVertical } from "lucide-react";
 
-type AssetRowProps = {
+export type AssetRowProps = {
   assetId: string;
   name: string;
   serial: string;
