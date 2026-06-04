@@ -228,12 +228,15 @@ export async function joinOrganization(organizationId: string) {
   try {
     const response = await api.post(`/api/organizations/${organizationId}/join`);
     const cookieStore = await cookies();
-    cookieStore.set("active_organization_id", String(organizationId), {
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: 7 * 24 * 60 * 60,
-    });
+    
+    if (response.data?.status !== "pending") {
+      cookieStore.set("active_organization_id", String(organizationId), {
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60,
+      });
+    }
     revalidatePath("/dashboard");
     return { data: response.data, error: null };
   } catch (error: any) {
