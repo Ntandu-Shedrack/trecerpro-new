@@ -92,9 +92,17 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
       if (res.error) {
         throw new Error(res.error);
       }
-      toast.success("Joined organization successfully!");
-      router.push("/dashboard/overview");
-      router.refresh();
+
+      if (res.data?.status === "pending") {
+        toast.success("Join request submitted successfully! Waiting for admin approval.");
+        setSuggestedOrgs(prev =>
+          prev.map(org => org.id === orgId ? { ...org, join_request_status: "pending" } : org)
+        );
+      } else {
+        toast.success("Joined organization successfully!");
+        router.push("/dashboard/overview");
+        router.refresh();
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to join organization");
     } finally {
@@ -244,37 +252,67 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
                     Available Workspaces ({suggestedOrgs.length})
                   </p>
                   <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
-                    {suggestedOrgs.map((org) => (
-                      <div 
-                        key={org.id} 
-                        className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-300 hover:bg-teal-50/10 transition-all duration-200 group"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm uppercase">
-                            {org.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-slate-800 text-sm group-hover:text-slate-900 transition-colors">{org.name}</p>
-                            <p className="text-xs text-slate-400">
-                              {org.pivot?.role === "owner" ? "Owned" : "Workspace"} • domain matching
-                            </p>
-                          </div>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          disabled={isJoining !== null}
-                          onClick={() => handleJoin(org.id)}
-                          className="h-8 text-teal-600 border-teal-200 hover:bg-teal-50 hover:text-teal-700 transition-all duration-200 cursor-pointer"
+                    {suggestedOrgs.map((org) => {
+                      const isPending = org.join_request_status === "pending";
+                      const requiresApproval = org.require_join_approval;
+
+                      return (
+                        <div 
+                          key={org.id} 
+                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-300 hover:bg-teal-50/10 transition-all duration-200 group"
                         >
-                          {isJoining === org.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <>Join</>
-                          )}
-                        </Button>
-                      </div>
-                    ))}
+                          <div className="flex items-center gap-3">
+                            <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm uppercase">
+                              {org.name.charAt(0)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold text-slate-800 text-sm group-hover:text-slate-900 transition-colors">{org.name}</p>
+                                {isPending ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                    Pending Approval
+                                  </span>
+                                ) : requiresApproval ? (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                    Needs Request
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Auto-Join
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-400">
+                                {org.pivot?.role === "owner" ? "Owned" : "Workspace"} • domain matching
+                              </p>
+                            </div>
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant={isPending ? "ghost" : requiresApproval ? "secondary" : "outline"}
+                            disabled={isJoining !== null || isPending}
+                            onClick={() => handleJoin(org.id)}
+                            className={`h-8 transition-all duration-200 cursor-pointer ${
+                              isPending 
+                                ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
+                                : requiresApproval 
+                                  ? "text-indigo-600 border-indigo-200 hover:bg-indigo-50" 
+                                  : "text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                            }`}
+                          >
+                            {isJoining === org.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : isPending ? (
+                              "Requested"
+                            ) : requiresApproval ? (
+                              "Request to Join"
+                            ) : (
+                              "Join"
+                            )}
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
