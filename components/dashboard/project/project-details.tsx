@@ -166,7 +166,7 @@ export default function ProjectDetailsView({
               </TabsContent>
 
               <TabsContent value="settings" className="m-0 h-auto flex flex-col gap-6">
-                <SettingsTab projectId={String(project.id)} />
+                <SettingsTab projectId={String(project.id)} initialCategories={initialCategories} />
               </TabsContent>
             </motion.div>
           </AnimatePresence>

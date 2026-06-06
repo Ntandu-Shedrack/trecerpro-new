@@ -42,11 +42,12 @@ import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescript
 
 interface SettingsTabProps {
   projectId: string;
+  initialCategories?: Category[];
 }
 
-export default function SettingsTab({ projectId }: SettingsTabProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export default function SettingsTab({ projectId, initialCategories = [] }: SettingsTabProps) {
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [isLoading, setIsLoading] = useState(initialCategories.length === 0);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
@@ -58,7 +59,8 @@ export default function SettingsTab({ projectId }: SettingsTabProps) {
     try {
       const { data, error } = await getCategories(projectId);
       if (error) throw new Error(error);
-      setCategories(data || []);
+      const list = Array.isArray(data) ? data : ((data as any)?.data || []);
+      setCategories(list);
     } catch (error: any) {
       toast.error(error.message || "Failed to fetch categories");
     } finally {
@@ -170,7 +172,7 @@ export default function SettingsTab({ projectId }: SettingsTabProps) {
               </TableRow>
             ) : (
               <AnimatePresence mode="popLayout">
-                {categories.map((category, index) => (
+                {Array.isArray(categories) && categories.map((category, index) => (
                   <motion.tr
                     key={category.id}
                     initial={{ opacity: 0, y: 10 }}
