@@ -5,7 +5,7 @@ import { useQueryState } from "nuqs";
 import { ProjectsGrid } from "./projects-grid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Filter, ArrowUpDown, PlusCircle, Search } from "lucide-react";
+import { Filter, ArrowUpDown, Search } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,26 +48,26 @@ export function ProjectsView({ initialProjects, organizationId }: ProjectsViewPr
   }, [initialProjects, search, status, sortBy]);
 
   return (
-    <div className="space-y-6 p-8">
+    <div className="space-y-6">
       {/* Hero Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-white text-3xl font-black tracking-tight">
+          <h1 className="text-foreground text-3xl font-black tracking-tight">
             Project Management Workspace
           </h1>
-          <p className="text-slate-400 text-base max-w-2xl">
+          <p className="text-muted-foreground text-base max-w-2xl">
             Efficiently oversee enterprise asset verification lifecycle. Monitor progress across global locations in real-time.
           </p>
         </div>
       </div>
 
       {/* Filter Toolbar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
         <div className="relative w-full sm:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search projects..."
-            className="pl-9 bg-slate-900/50 border-slate-800 focus:bg-slate-900"
+            className="pl-9 bg-muted/30 border-border/80 text-foreground placeholder:text-muted-foreground/80 focus:bg-card/80 transition-all rounded-lg"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -77,14 +77,14 @@ export function ProjectsView({ initialProjects, organizationId }: ProjectsViewPr
           {/* Status filter dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2 border-slate-800">
-                <Filter className="size-4 text-slate-400" />
+              <Button variant="outline" className="flex items-center gap-2 border-border/80 text-foreground bg-transparent hover:bg-muted/10">
+                <Filter className="size-4 text-muted-foreground" />
                 <span>Status: <span className="capitalize text-primary font-bold">{status}</span></span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 bg-slate-950 border-slate-800">
+            <DropdownMenuContent className="w-48 bg-card border-border text-foreground shadow-lg">
               <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-slate-800" />
+              <DropdownMenuSeparator className="bg-border/60" />
               <DropdownMenuRadioGroup value={status} onValueChange={setStatus}>
                 <DropdownMenuRadioItem value="all" className="cursor-pointer">All Statuses</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="active" className="cursor-pointer">Active</DropdownMenuRadioItem>
@@ -98,14 +98,14 @@ export function ProjectsView({ initialProjects, organizationId }: ProjectsViewPr
           {/* Sort dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2 border-slate-800">
-                <ArrowUpDown className="size-4 text-slate-400" />
+              <Button variant="outline" className="flex items-center gap-2 border-border/80 text-foreground bg-transparent hover:bg-muted/10">
+                <ArrowUpDown className="size-4 text-muted-foreground" />
                 <span>Sort: <span className="capitalize text-primary font-bold">{sortBy}</span></span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48 bg-slate-950 border-slate-800">
+            <DropdownMenuContent className="w-48 bg-card border-border text-foreground shadow-lg">
               <DropdownMenuLabel>Sort Projects</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-slate-800" />
+              <DropdownMenuSeparator className="bg-border/60" />
               <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
                 <DropdownMenuRadioItem value="recent" className="cursor-pointer">Most Recent</DropdownMenuRadioItem>
                 <DropdownMenuRadioItem value="name" className="cursor-pointer">Alphabetical</DropdownMenuRadioItem>

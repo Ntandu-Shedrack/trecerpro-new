@@ -1,23 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { 
-  Folder, 
-  Clock, 
-  ChevronRight,
+import {
+  Folder,
+  Clock,
   Share2,
   Edit2,
-  Info} from "lucide-react";
+  Info
+} from "lucide-react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger
 } from "@/components/ui/tabs";
 import { type Project } from "@/types";
 import type { Activity, AssetWithCategory, Category } from "@/types";
@@ -52,48 +52,35 @@ export default function ProjectDetailsView({
   const [activeTab, setActiveTab] = React.useState("overview");
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
 
-
-  const statusConfig = {
+  const statusConfig: Record<
+    Project["status"],
+    { color: string; icon: React.ReactNode; label: string }
+  > = {
     active: {
-      color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-      icon: <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse mr-2" />,
+      color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      icon: <div className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse mr-2" />,
       label: "Active"
     },
-    completed: {
-      color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-      icon: <div className="h-2 w-2 rounded-full bg-blue-500 mr-2" />,
-      label: "Completed"
-    },
     "on-hold": {
-      color: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-      icon: <div className="h-2 w-2 rounded-full bg-amber-500 mr-2" />,
+      color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
+      icon: <div className="h-2 w-2 rounded-full bg-amber-500 dark:bg-amber-400 mr-2" />,
       label: "On Hold"
     },
-    draft: {
-      color: "bg-slate-500/10 text-slate-400 border-slate-500/20",
-      icon: <div className="h-2 w-2 rounded-full bg-slate-500 mr-2" />,
-      label: "Draft"
+    completed: {
+      color: "bg-muted text-muted-foreground border-border/80",
+      icon: <div className="h-2 w-2 rounded-full bg-muted-foreground mr-2" />,
+      label: "Completed"
     },
-    suspended: {
-      color: "bg-rose-500/10 text-rose-500 border-rose-500/20",
-      icon: <div className="h-2 w-2 rounded-full bg-rose-500 mr-2" />,
-      label: "Suspended"
-    },
-    archived: {
-      color: "bg-zinc-500/10 text-zinc-400 border-zinc-500/20",
-      icon: <div className="h-2 w-2 rounded-full bg-zinc-500 mr-2" />,
-      label: "Archived"
-    }
   };
 
-  const currentStatus = statusConfig[project.status as keyof typeof statusConfig] || statusConfig.active;
+  const currentStatus = statusConfig[project.status] || statusConfig.active;
 
   return (
-    <div className="flex flex-col gap-8 p-1 sm:p-4 text-foreground animate-in fade-in duration-500">
+    <div className="flex flex-col gap-8 text-foreground animate-in fade-in duration-500">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex items-center gap-4">
-            <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shadow-sm">
+            <div className="h-14 w-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-sm">
               <Folder className="h-7 w-7 text-primary" />
             </div>
             <div className="space-y-1">
@@ -105,69 +92,47 @@ export default function ProjectDetailsView({
                 </Badge>
               </div>
               <p className="text-muted-foreground flex items-center gap-2 text-sm max-w-xl line-clamp-1">
-                <Info className="h-3.5 w-3.5" />
+                <Info className="h-3.5 w-3.5 text-muted-foreground/80" />
                 {project.description || "Project created recently. No description added yet."}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">
-            <Button variant="outline" size="sm" className="gap-2 flex-1 md:flex-none">
+            <Button variant="outline" size="sm" className="gap-2 flex-1 md:flex-none border-border/80 text-foreground bg-transparent hover:bg-muted/10">
               <Share2 className="h-4 w-4" />
               Share
             </Button>
-            <Button 
-              size="sm" 
-              className="gap-2 flex-1 md:flex-none shadow-md"
+            <Button
+              size="sm"
+              className="gap-2 flex-1 md:flex-none bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_0_15px_rgba(19,127,236,0.3)] border-none font-medium"
               onClick={() => setIsEditDialogOpen(true)}
             >
               <Edit2 className="h-4 w-4" />
               Edit Details
             </Button>
-            {/* <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="shrink-0 border border-border/50">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-background/95 backdrop-blur-md">
-                <DropdownMenuItem className="gap-2">
-                  <Settings className="h-4 w-4" />
-                  Project Settings
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Analytics Report
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
-                  <Trash2 className="h-4 w-4" />
-                  Archive Project
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu> */}
           </div>
         </div>
       </div>
 
       {/* Main Content Area */}
       <Tabs defaultValue="overview" className="w-full space-y-6" onValueChange={setActiveTab}>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-px">
-          <TabsList className="bg-transparent h-auto p-0 gap-8 rounded-none">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-border/60 pb-px">
+          <TabsList className="bg-transparent h-auto p-0 gap-6 rounded-none">
             {["overview", "assets", "activity", "settings"].map((tab) => (
-              <TabsTrigger 
-                key={tab} 
-                value={tab} 
-                className="relative px-3 py-3 rounded-md data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent data-[state=active]:border-primary transition-all capitalize font-medium text-muted-foreground data-[state=active]:text-foreground"
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                className="px-4 py-1.5 rounded-lg data-[state=active]:bg-primary/10 data-[state=active]:border-primary/20 data-[state=active]:text-primary border border-transparent transition-all capitalize font-medium text-muted-foreground data-[state=active]:shadow-none hover:text-foreground cursor-pointer"
               >
                 {tab}
               </TabsTrigger>
             ))}
           </TabsList>
-          
+
           <div className="flex items-center gap-2 text-xs text-muted-foreground py-2 hidden sm:flex">
-             <Clock className="h-3.5 w-3.5" />
-             Last activity updated {format(new Date(project.updated_at), "MMM d, HH:mm")}
+            <Clock className="h-3.5 w-3.5" />
+            Last activity updated {format(new Date(project.updated_at), "MMM d, HH:mm")}
           </div>
         </div>
 
@@ -208,12 +173,11 @@ export default function ProjectDetailsView({
         </div>
       </Tabs>
 
-      <ProjectEditDialog 
-        project={project} 
-        open={isEditDialogOpen} 
-        onOpenChange={setIsEditDialogOpen} 
+      <ProjectEditDialog
+        project={project}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
       />
     </div>
   );
 }
-
