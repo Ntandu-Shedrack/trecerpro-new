@@ -44,42 +44,63 @@ const alerts = [
   },
 ];
 
+const alertColorMap: Record<
+  string,
+  { bg: string; border: string; text: string }
+> = {
+  red: {
+    bg: "bg-destructive/10 hover:bg-destructive/15",
+    border: "border-destructive/20",
+    text: "text-destructive",
+  },
+  amber: {
+    bg: "bg-amber-500/10 hover:bg-amber-500/15",
+    border: "border-amber-500/20",
+    text: "text-amber-600 dark:text-amber-400",
+  },
+  slate: {
+    bg: "bg-muted/60 hover:bg-muted/80",
+    border: "border-border/60",
+    text: "text-muted-foreground",
+  },
+};
+
 export function DashboardOperations() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-8">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Regional Distribution */}
-      <Card className="lg:col-span-2 relative overflow-hidden border-border shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="lg:col-span-2 relative overflow-hidden border-border bg-card/75 backdrop-blur-md shadow-md hover:shadow-lg hover:border-primary/20 transition-all duration-300">
         <CardContent className="p-6">
-          <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-4">
+          <h4 className="font-bold text-foreground mb-4">
             Regional Distribution
           </h4>
 
-          <div className="relative h-64 w-full bg-slate-800/50 rounded-lg flex items-center justify-center border border-slate-border/50 overflow-hidden">
+          <div className="relative h-64 w-full bg-muted/20 rounded-lg flex items-center justify-center border border-border/40 overflow-hidden">
             {/* Abstract gradient overlay */}
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
+            <div className="absolute inset-0 opacity-15 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary via-transparent to-transparent"></div>
 
             {/* Map Image */}
             <Image
               alt="Regional Map showing regional distribution of assets"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuANiMUNZiPQL5JnFffZb4co41TVOvMYc0OvN4NzRRH-3NGGcVJxliMQ-FcgvV6f8oKglZUsfkDqvtnFQp2ohblyb2vvCeBuyTcsPGlaJ7IYLqo97X7XVoUUVQme3nHI9oGy4FKpbYVGwePbsNMdtEfrBncaEutU8OXzEye8GFano_acguUh8BLZMYLZ_yeiZeHUMkbNRhDNqEVyfzomFM2dQBwmQDBwVbZe77FaHUIB1as82ba-TYqWQ8Ouyxn_8dylBtojVUoGsug"
-              width={500} // or your desired dimensions
+              width={500}
               height={400}
-              className="z-10 opacity-40 grayscale"
-              priority // loads it eagerly for better LCP
+              className="z-10 opacity-30 dark:opacity-45 grayscale dark:invert"
+              priority
             />
 
             {/* Region Overlay Chips */}
             {regions.map((region) => (
               <div
                 key={region.name}
-                className={`absolute p-3 bg-slate-900/80 backdrop-blur rounded-lg border border-slate-border`}
+                className="absolute z-20 p-3 bg-card/85 backdrop-blur border border-border/80 rounded-lg shadow-md"
                 style={region.position}
               >
-                <p className="text-[10px] font-bold text-slate-500 uppercase mb-1">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase mb-1">
                   {region.name}
                 </p>
-                <p className="text-lg font-bold text-slate-100">
-                  {region.count}
+                <p className="text-lg font-bold text-foreground">
+                  {region.count.toLocaleString()}
                 </p>
               </div>
             ))}
@@ -88,37 +109,41 @@ export function DashboardOperations() {
       </Card>
 
       {/* Critical Alerts */}
-      <Card className="border-border shadow-lg hover:shadow-xl transition-shadow">
+      <Card className="border-border bg-card/75 backdrop-blur-md shadow-md hover:shadow-lg hover:border-primary/20 transition-all duration-300">
         <CardContent className="p-6">
           <div className="flex items-center gap-2 mb-6">
-            <AlertTriangle className="text-amber-500 w-5 h-5" />
-            <h4 className="font-bold text-slate-900 dark:text-slate-100">
+            <AlertTriangle className="text-amber-500 w-5 h-5 animate-pulse" />
+            <h4 className="font-bold text-foreground">
               Critical Alerts
             </h4>
           </div>
 
           <div className="space-y-4">
-            {alerts.map((alert) => (
-              <div
-                key={alert.type}
-                className={`p-4 rounded-lg bg-${alert.color}-500/5 border border-${alert.color}-500/20 hover:bg-${alert.color}-500/10 transition-colors`}
-              >
-                <div className="flex justify-between items-center mb-1">
-                  <span
-                    className={`text-xs font-bold uppercase tracking-wider text-${alert.color}-500`}
-                  >
-                    {alert.type}
-                  </span>
-                  <span className="text-[10px] font-medium text-slate-500">
-                    {alert.priority}
-                  </span>
+            {alerts.map((alert) => {
+              const styles = alertColorMap[alert.color] ?? alertColorMap.slate;
+
+              return (
+                <div
+                  key={alert.type}
+                  className={`p-4 rounded-lg border transition-all duration-300 ${styles.bg} ${styles.border}`}
+                >
+                  <div className="flex justify-between items-center mb-1">
+                    <span
+                      className={`text-xs font-bold uppercase tracking-wider ${styles.text}`}
+                    >
+                      {alert.type}
+                    </span>
+                    <span className="text-[10px] font-medium text-muted-foreground">
+                      {alert.priority}
+                    </span>
+                  </div>
+                  <p className="text-xl font-bold text-foreground">
+                    {alert.count.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-muted-foreground">{alert.description}</p>
                 </div>
-                <p className="text-xl font-bold text-slate-100">
-                  {alert.count}
-                </p>
-                <p className="text-xs text-slate-400">{alert.description}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </CardContent>
       </Card>

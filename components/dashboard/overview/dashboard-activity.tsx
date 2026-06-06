@@ -78,17 +78,17 @@ const activities = [
 
 export function DashboardActivity() {
   const statusColors: Record<string, string> = {
-    Verified: "bg-emerald-500/10 text-emerald-500",
-    Warning: "bg-amber-500/10 text-amber-500",
-    Pending: "bg-slate-400/10 text-slate-400",
+    Verified: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+    Warning: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+    Pending: "bg-muted text-muted-foreground border border-border",
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8 p-8">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-4">
       {/* Recent Scans */}
-      <Card className="border-border shadow-lg hover:shadow-xl transition-shadow">
-        <div className="flex items-center justify-between p-6 border-b border-slate-border bg-gradient-to-r from-slate-800/20 to-slate-900/10 rounded-t-xl">
-          <h4 className="font-bold text-slate-900 dark:text-slate-100">
+      <Card className="border-border bg-card/75 backdrop-blur-md shadow-md hover:shadow-lg hover:border-primary/20 transition-all duration-300">
+        <div className="flex items-center justify-between p-6 border-b border-border bg-muted/20 rounded-t-xl">
+          <h4 className="font-bold text-foreground">
             Recent Barcode Scans
           </h4>
           <Link
@@ -100,7 +100,7 @@ export function DashboardActivity() {
         </div>
         <CardContent className="p-0 overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="text-slate-500 font-medium text-xs border-b border-slate-border bg-slate-50/50 dark:bg-slate-800/30">
+            <thead className="text-muted-foreground font-medium text-xs border-b border-border bg-muted/30">
               <tr>
                 <th className="px-6 py-3">Asset</th>
                 <th className="px-6 py-3">Scanned By</th>
@@ -108,22 +108,22 @@ export function DashboardActivity() {
                 <th className="px-6 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-border/50">
+            <tbody className="divide-y divide-border/40">
               {recentScans.map((scan, idx) => (
                 <tr
                   key={idx}
-                  className="hover:bg-slate-50/5 dark:hover:bg-slate-800/20 transition-colors cursor-pointer"
+                  className="hover:bg-muted/40 transition-colors cursor-pointer"
                 >
-                  <td className="px-6 py-4 font-medium text-slate-100 truncate">
+                  <td className="px-6 py-4 font-medium text-foreground truncate">
                     {scan.asset}
                   </td>
-                  <td className="px-6 py-4 text-slate-400">{scan.scannedBy}</td>
-                  <td className="px-6 py-4 text-slate-500 text-xs">
+                  <td className="px-6 py-4 text-muted-foreground">{scan.scannedBy}</td>
+                  <td className="px-6 py-4 text-muted-foreground/80 text-xs">
                     {scan.time}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-semibold uppercase ${statusColors[scan.status]}`}
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${statusColors[scan.status]}`}
                     >
                       {scan.status}
                     </span>
@@ -136,9 +136,9 @@ export function DashboardActivity() {
       </Card>
 
       {/* Activity Feed */}
-      <Card className="border-border shadow-lg hover:shadow-xl transition-shadow p-6">
+      <Card className="border-border bg-card/75 backdrop-blur-md shadow-md hover:shadow-lg hover:border-primary/20 transition-all duration-300 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-bold text-slate-900 dark:text-slate-100">
+          <h4 className="font-bold text-foreground">
             Activity Feed
           </h4>
           <Link
@@ -150,7 +150,7 @@ export function DashboardActivity() {
         </div>
         <div className="relative pl-10">
           {/* Vertical timeline line */}
-          <div className="absolute left-4 top-0 bottom-0 w-px bg-slate-700/50"></div>
+          <div className="absolute left-4 top-0 bottom-0 w-px bg-border/60"></div>
 
           <div className="space-y-4">
             {activities.map((act, idx) => {
@@ -162,19 +162,19 @@ export function DashboardActivity() {
                 { bg: string; text: string; ring: string }
               > = {
                 emerald: {
-                  bg: "bg-emerald-500/20",
-                  text: "text-emerald-500",
-                  ring: "ring-emerald-500/30",
+                  bg: "bg-emerald-500/10",
+                  text: "text-emerald-600 dark:text-emerald-400",
+                  ring: "ring-emerald-500/20",
                 },
                 orange: {
-                  bg: "bg-orange-500/20",
-                  text: "text-orange-500",
-                  ring: "ring-orange-500/30",
+                  bg: "bg-orange-500/10",
+                  text: "text-orange-600 dark:text-orange-400",
+                  ring: "ring-orange-500/20",
                 },
                 red: {
-                  bg: "bg-red-500/20",
-                  text: "text-red-500",
-                  ring: "ring-red-500/30",
+                  bg: "bg-red-500/10",
+                  text: "text-red-600 dark:text-red-400",
+                  ring: "ring-red-500/20",
                 },
               };
               const colors = colorMap[act.color] ?? colorMap.emerald;
@@ -189,36 +189,36 @@ export function DashboardActivity() {
                   </div>
 
                   {/* Activity Card */}
-                  <div className="w-full rounded-lg border border-slate-800/60 bg-gradient-to-b from-slate-900/20 to-slate-900/5 hover:from-slate-900/30 hover:to-slate-900/10 transition-colors">
+                  <div className="w-full rounded-lg border border-border/50 bg-card/40 hover:bg-card/75 hover:border-border/80 transition-all duration-300">
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-slate-100 font-semibold text-sm">
+                            <span className="text-foreground font-semibold text-sm">
                               {act.title}
                             </span>
                             {act.pill ? (
-                              <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-slate-700/40 text-slate-300 border border-slate-600/40">
+                              <span className="text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border">
                                 {act.pill}
                               </span>
                             ) : null}
                           </div>
-                          <p className="text-sm text-slate-300 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             {act.description}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1 text-[11px] text-slate-500 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-[11px] text-muted-foreground whitespace-nowrap">
                           <Clock className="w-3.5 h-3.5" /> {act.time}
                         </div>
                       </div>
                     </div>
 
-                    {/* Divider and actions */}
-                    <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-slate-800/60 bg-slate-900/10">
-                      <button className="text-[11px] px-2.5 py-1 rounded-md bg-slate-800/50 hover:bg-slate-800 text-slate-300 border border-slate-700/60 transition-colors">
+                    {/* Action buttons */}
+                    <div className="flex items-center justify-end gap-2 px-3 py-2 border-t border-border/40 bg-muted/10">
+                      <button className="text-[11px] px-2.5 py-1 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 border border-border transition-colors cursor-pointer">
                         Details
                       </button>
-                      <button className="text-[11px] px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors">
+                      <button className="text-[11px] px-2.5 py-1 rounded-md bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors cursor-pointer">
                         Acknowledge
                       </button>
                     </div>

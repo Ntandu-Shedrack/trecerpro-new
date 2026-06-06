@@ -5,11 +5,11 @@ import { DashboardOperations } from "@/components/dashboard/overview/dashboard-o
 
 export default function DashboardOverviewPage() {
   return (
-    <>
+    <div className="space-y-6">
       <DashboardMetrics />
       <DashboardInsights />
       <DashboardActivity />
       <DashboardOperations />
-    </>
+    </div>
   );
 }
