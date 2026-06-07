@@ -7,7 +7,9 @@ import {
   AlertCircle,
   CheckCircle2,
   Download,
-  Loader2
+  Loader2,
+  ChevronRight,
+  Sparkles
 } from "lucide-react";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
@@ -54,7 +56,7 @@ interface BulkUploadDialogProps {
 
 type ParsedAsset = {
   barcode: string;
-  values: Record<string, any>;
+  values: Record<string, string | number | boolean | null | undefined>;
 };
 
 type ValidationError = {
@@ -73,6 +75,7 @@ export default function BulkUploadDialog({
   const [selectedCategoryId, setSelectedCategoryId] = React.useState<string>("");
   const [isProcessingFile, setIsProcessingFile] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [isDragOver, setIsDragOver] = React.useState(false);
 
   const [parsedData, setParsedData] = React.useState<ParsedAsset[]>([]);
   const [errors, setErrors] = React.useState<ValidationError[]>([]);
@@ -81,7 +84,7 @@ export default function BulkUploadDialog({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const safeCategories = React.useMemo<Category[]>(() => {
-    return Array.isArray(categories) ? categories : ((categories as any)?.data || []);
+    return Array.isArray(categories) ? categories : ((categories as unknown as { data: Category[] })?.data || []);
   }, [categories]);
 
   const selectedCategory = safeCategories.find((c) => c.id === selectedCategoryId);
@@ -93,6 +96,7 @@ export default function BulkUploadDialog({
       setParsedData([]);
       setErrors([]);
       setFileName(null);
+      setIsDragOver(false);
     }
   }, [open]);
 
@@ -125,14 +129,14 @@ export default function BulkUploadDialog({
     setParsedData([]);
 
     try {
-      let rawData: any[] = [];
+      let rawData: unknown[] = [];
 
       if (file.name.endsWith(".csv")) {
         rawData = await new Promise((resolve, reject) => {
           Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
-            complete: (results) => resolve(results.data),
+            complete: (results) => resolve(results.data as unknown[]),
             error: (error) => reject(error),
           });
         });
@@ -145,7 +149,7 @@ export default function BulkUploadDialog({
       } else if (file.name.endsWith(".json")) {
         const text = await file.text();
         const parsedJson = JSON.parse(text);
-        rawData = Array.isArray(parsedJson) ? parsedJson : (parsedJson.assets || [parsedJson]);
+        rawData = Array.isArray(parsedJson) ? (parsedJson as unknown[]) : ((parsedJson.assets as unknown[]) || [parsedJson]);
       } else {
         throw new Error("Unsupported file format. Please upload a .csv, .xlsx, or .json file.");
       }
@@ -195,14 +199,14 @@ export default function BulkUploadDialog({
 
       rawData.forEach((row, index) => {
         const rowNumber = index + 2;
-        const rowData = row as Record<string, any>;
+        const rowData = row as Record<string, unknown>;
 
-        const cleanedRow: Record<string, any> = {
+        const cleanedRow: Record<string, string | number | boolean | null | undefined> = {
           barcode: rowData["barcode"]?.toString().trim() || rowData["Asset Barcode"]?.toString().trim() || "",
         };
 
         selectedCategory.attributes.forEach((attr) => {
-          let val = rowData[attr.name] ?? rowData[attr.label];
+          const val = rowData[attr.name] ?? rowData[attr.label];
 
           if (val !== undefined && val !== null && val !== "") {
             if (attr.type === "boolean") {
@@ -212,10 +216,10 @@ export default function BulkUploadDialog({
               } else if (strVal === "false" || strVal === "no" || strVal === "0") {
                 cleanedRow[attr.name] = false;
               } else {
-                cleanedRow[attr.name] = val;
+                cleanedRow[attr.name] = val as string | number | boolean | null | undefined;
               }
             } else {
-              cleanedRow[attr.name] = val;
+              cleanedRow[attr.name] = val as string | number | boolean | null | undefined;
             }
           }
         });
@@ -232,7 +236,7 @@ export default function BulkUploadDialog({
         } else {
           const { barcode, ...values } = validation.data as {
             barcode: string;
-            [key: string]: any;
+            [key: string]: string | number | boolean | null | undefined;
           };
           newParsedData.push({
             barcode,
@@ -244,8 +248,9 @@ export default function BulkUploadDialog({
       setParsedData(newParsedData);
       setErrors(newErrors);
       setStep(2);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to process file");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to process file";
+      toast.error(message);
       setFileName(null);
     } finally {
       setIsProcessingFile(false);
@@ -264,6 +269,7 @@ export default function BulkUploadDialog({
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragOver(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
       processFile(file);
@@ -272,6 +278,11 @@ export default function BulkUploadDialog({
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
   };
 
   const handleSubmit = async () => {
@@ -295,7 +306,7 @@ export default function BulkUploadDialog({
         toast.success(`Successfully uploaded ${parsedData.length} assets.`);
         onSuccess();
       }
-    } catch (err) {
+    } catch {
       toast.error("An unexpected error occurred during bulk upload.");
     } finally {
       setIsUploading(false);
@@ -304,107 +315,137 @@ export default function BulkUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] bg-card border border-border/80 text-foreground overflow-hidden flex flex-col max-h-[90vh] shadow-2xl">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-xl font-bold text-foreground">
-            <Upload className="h-5 w-5 text-primary" />
-            Bulk Upload Assets
-          </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Add multiple assets at once using a CSV, Excel, or JSON file.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[700px] bg-card border border-border/60 text-foreground overflow-hidden flex flex-col p-0 h-[85vh] sm:h-auto sm:max-h-[90vh] shadow-2xl rounded-2xl">
+        <div className="p-8 pb-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-2xl font-bold text-foreground">
+              <Upload className="h-5 w-5 text-primary" />
+              Bulk Upload Assets
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Add multiple assets at once using a CSV, Excel, or JSON file.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+        {/* Dynamic Progress Stepper */}
+        <div className="flex items-center justify-between px-8 py-4 border-y border-border/60 bg-muted/10">
+          <div className="flex items-center gap-3">
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === 1 ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 font-black" : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"}`}>
+              {step > 1 ? "✓" : "1"}
+            </div>
+            <span className={`text-[10px] font-black uppercase tracking-wider ${step === 1 ? "text-foreground" : "text-muted-foreground"}`}>Configuration</span>
+          </div>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/45" />
+          <div className="flex items-center gap-3">
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs transition-all ${step === 2 ? "bg-primary text-primary-foreground shadow-md ring-2 ring-primary/20 font-black" : "bg-muted text-muted-foreground border border-border"}`}>
+              2
+            </div>
+            <span className={`text-[10px] font-black uppercase tracking-wider ${step === 2 ? "text-foreground" : "text-muted-foreground"}`}>Preview & Verify</span>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0 px-8 py-4">
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div
                 key="step1"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-6 py-4"
+                className="space-y-6 flex-1 flex flex-col justify-between"
               >
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-muted-foreground">Select Category</label>
-                  <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
-                    <SelectTrigger className="w-full bg-muted/30 border-border/80 focus:ring-primary/20 text-foreground shadow-sm h-11">
-                      <SelectValue placeholder="Choose a category for the uploaded assets" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card border-border text-foreground">
-                      {safeCategories.map((category) => (
-                        <SelectItem key={category.id} value={String(category.id)} className="cursor-pointer focus:bg-muted text-foreground">
-                          <div className="font-semibold">{category.name}</div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    All assets in the uploaded file must belong to this category. This ensures the correct attributes are validated.
-                  </p>
-                </div>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-black uppercase tracking-wider text-muted-foreground">Select Category</label>
+                    <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
+                      <SelectTrigger className="w-full bg-muted/30 border-border/80 focus:ring-primary/20 text-foreground shadow-sm h-12 rounded-xl text-sm font-semibold transition-all">
+                        <SelectValue placeholder="Choose a category for the uploaded assets" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
+                        {safeCategories.map((category) => (
+                          <SelectItem key={category.id} value={String(category.id)} className="cursor-pointer focus:bg-muted text-foreground p-3 rounded-lg m-1">
+                            <div className="font-semibold">{category.name}</div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      All assets in the uploaded file must belong to this category to validate constraints correctly.
+                    </p>
+                  </div>
 
-                {selectedCategoryId && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="space-y-4"
-                  >
-                    <div className="flex items-center justify-between bg-primary/5 border border-primary/10 rounded-xl p-4">
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Need a template?</p>
-                        <p className="text-xs text-muted-foreground mt-1">Download a sample file with the correct headers for this category.</p>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={handleDownloadSample} className="gap-2 bg-muted/30 border-border/80 text-foreground cursor-pointer hover:bg-muted/50">
-                        <Download className="h-4 w-4 text-primary" />
-                        Download Sample
-                      </Button>
-                    </div>
-
-                    <div
-                      className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center text-center transition-all ${isProcessingFile ? "border-primary bg-primary/5" : "border-border/80 hover:border-primary/50 hover:bg-muted/20 cursor-pointer"
-                        }`}
-                      onClick={() => !isProcessingFile && fileInputRef.current?.click()}
-                      onDrop={handleDrop}
-                      onDragOver={handleDragOver}
-                    >
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept=".csv, .xls, .xlsx, .json"
-                        onChange={handleFileUpload}
-                      />
-
-                      {isProcessingFile ? (
-                        <>
-                          <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
-                          <p className="text-sm font-semibold text-foreground">Processing file...</p>
-                        </>
-                      ) : (
-                        <>
-                          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 text-primary">
-                            <FileSpreadsheet className="h-6 w-6" />
+                  <AnimatePresence mode="wait">
+                    {selectedCategoryId && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 15 }}
+                        className="space-y-4"
+                      >
+                        <div className="flex items-center justify-between bg-primary/5 border border-primary/10 rounded-2xl p-5 shadow-inner relative overflow-hidden backdrop-blur-xs">
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold text-foreground">Need a template?</p>
+                            <p className="text-xs text-muted-foreground max-w-sm">Download a sample file with the correct headers for this category.</p>
                           </div>
-                          <p className="text-sm font-semibold mb-1 text-foreground">Click to upload or drag and drop</p>
-                          <p className="text-xs text-muted-foreground">CSV, XLSX, or JSON (max 5MB)</p>
-                        </>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+                          <Button variant="outline" size="sm" onClick={handleDownloadSample} className="gap-2 bg-card hover:bg-muted border-border/80 text-foreground shadow-sm rounded-lg active:scale-95 transition-transform cursor-pointer font-bold text-xs">
+                            <Download className="h-4 w-4 text-primary" />
+                            Download Sample
+                          </Button>
+                        </div>
+
+                        <div
+                          className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-all ${
+                            isProcessingFile 
+                              ? "border-primary bg-primary/5" 
+                              : isDragOver
+                                ? "border-primary bg-primary/10 scale-[1.02] shadow-lg shadow-primary/5"
+                                : "border-border/80 hover:border-primary/50 hover:bg-muted/15 cursor-pointer"
+                          }`}
+                          onClick={() => !isProcessingFile && fileInputRef.current?.click()}
+                          onDrop={handleDrop}
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                        >
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".csv, .xls, .xlsx, .json"
+                            onChange={handleFileUpload}
+                          />
+
+                          {isProcessingFile ? (
+                            <>
+                              <Loader2 className="h-10 w-10 text-primary animate-spin mb-4" />
+                              <p className="text-sm font-semibold text-foreground">Processing file...</p>
+                            </>
+                          ) : (
+                            <>
+                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4 text-primary shadow-inner">
+                                <Upload className="h-6 w-6" />
+                              </div>
+                              <p className="text-sm font-semibold mb-1 text-foreground">Click to upload or drag and drop</p>
+                              <p className="text-xs text-muted-foreground">CSV, XLSX, or JSON (max 5MB)</p>
+                            </>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </motion.div>
             )}
 
             {step === 2 && (
               <motion.div
                 key="step2"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-4 py-4 flex flex-col min-h-0"
+                className="space-y-4 flex-1 flex flex-col min-h-0"
               >
                 <div className="flex items-center justify-between border-b border-border/60 pb-4">
                   <div>
@@ -417,22 +458,22 @@ export default function BulkUploadDialog({
                       {errors.length > 0 && ` and ${errors.length} error${errors.length !== 1 ? 's' : ''}`}
                     </p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="text-xs text-muted-foreground cursor-pointer">
+                  <Button variant="ghost" size="sm" onClick={() => setStep(1)} className="text-xs text-muted-foreground cursor-pointer rounded-lg hover:bg-muted font-bold px-3 py-1">
                     Change File
                   </Button>
                 </div>
 
                 {errors.length > 0 && (
-                  <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle className="text-sm font-bold">Validation Failed</AlertTitle>
-                    <AlertDescription className="text-xs mt-2">
+                  <Alert variant="destructive" className="bg-destructive/5 border-destructive/20 text-destructive rounded-2xl p-5 shadow-inner">
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <AlertTitle className="text-sm font-bold leading-none">Validation Failed</AlertTitle>
+                    <AlertDescription className="text-xs mt-3">
                       Please fix the following errors in your file. The entire upload is disabled until fields are corrected.
-                      <div className="mt-3 max-h-24 overflow-y-auto space-y-1 pr-2">
+                      <div className="mt-4 max-h-32 overflow-y-auto space-y-2 pr-2">
                         {errors.map((error, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
-                            <span className="font-mono bg-destructive/10 px-1.5 rounded text-[10px] whitespace-nowrap mt-0.5">Row {error.row}</span>
-                            <span>{error.message}</span>
+                          <div key={idx} className="flex items-start gap-2 text-destructive font-medium">
+                            <span className="font-mono bg-destructive/10 text-destructive px-2 py-0.5 rounded text-[10px] whitespace-nowrap mt-0.5 border border-destructive/15">Row {error.row}</span>
+                            <span className="text-[11px] leading-relaxed">{error.message}</span>
                           </div>
                         ))}
                       </div>
@@ -441,23 +482,26 @@ export default function BulkUploadDialog({
                 )}
 
                 {errors.length === 0 && parsedData.length > 0 && (
-                  <Alert className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <AlertTitle className="text-sm font-bold">Ready to Upload</AlertTitle>
-                    <AlertDescription className="text-xs mt-1">
-                      All {parsedData.length} rows passed type checks. You can review the records below.
+                  <Alert className="bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-2xl p-5 shadow-inner">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <AlertTitle className="text-sm font-bold leading-none flex items-center gap-1.5">
+                      Ready to Upload
+                      <Sparkles className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+                    </AlertTitle>
+                    <AlertDescription className="text-xs mt-2 font-medium">
+                      All {parsedData.length} rows passed validation. You can review the records in the grid below.
                     </AlertDescription>
                   </Alert>
                 )}
 
-                <div className="flex-1 min-h-[200px] border border-border/60 rounded-xl overflow-hidden bg-muted/10">
+                <div className="flex-1 min-h-[220px] border border-border/60 rounded-xl overflow-hidden bg-muted/10 shadow-inner">
                   <ScrollArea className="h-full w-full">
                     <Table>
                       <TableHeader className="bg-muted/30 sticky top-0 z-10 border-b border-border/60">
                         <TableRow>
-                          <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Barcode</TableHead>
+                          <TableHead className="text-xs font-black uppercase tracking-wider text-muted-foreground p-3">Barcode</TableHead>
                           {selectedCategory?.attributes.map((attr) => (
-                            <TableHead key={attr.name} className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                            <TableHead key={attr.name} className="text-xs font-black uppercase tracking-wider text-muted-foreground p-3">
                               {attr.label || attr.name}
                             </TableHead>
                           ))}
@@ -465,10 +509,10 @@ export default function BulkUploadDialog({
                       </TableHeader>
                       <TableBody>
                         {parsedData.slice(0, 10).map((row, idx) => (
-                          <TableRow key={idx} className="text-sm border-b border-border/40 hover:bg-muted/10">
-                            <TableCell className="font-medium text-foreground">{row.barcode}</TableCell>
+                          <TableRow key={idx} className="text-sm border-b border-border/40 hover:bg-muted/15 transition-all">
+                            <TableCell className="font-bold text-foreground p-3">{row.barcode}</TableCell>
                             {selectedCategory?.attributes.map((attr) => (
-                              <TableCell key={attr.name} className="text-muted-foreground/80">
+                              <TableCell key={attr.name} className="text-muted-foreground/80 p-3 font-semibold">
                                 {row.values[attr.name] !== undefined ? String(row.values[attr.name]) : "-"}
                               </TableCell>
                             ))}
@@ -479,20 +523,20 @@ export default function BulkUploadDialog({
                     <ScrollBar orientation="horizontal" />
                   </ScrollArea>
                   {parsedData.length > 10 && (
-                    <div className="text-center py-2 text-xs text-muted-foreground bg-muted/20 border-t border-border/60">
+                    <div className="text-center py-2 text-xs font-bold text-muted-foreground bg-muted/20 border-t border-border/60 uppercase tracking-widest text-[9px]">
                       Showing first 10 rows
                     </div>
                   )}
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border/60">
-                  <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground cursor-pointer">
+                  <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground cursor-pointer rounded-xl h-11 px-5 font-bold">
                     Cancel
                   </Button>
                   <Button
                     onClick={handleSubmit}
                     disabled={errors.length > 0 || parsedData.length === 0 || isUploading}
-                    className="gap-2 bg-primary text-primary-foreground hover:bg-primary/95 border-none cursor-pointer"
+                    className="gap-2 bg-primary text-primary-foreground hover:bg-primary/95 border-none cursor-pointer rounded-xl h-11 px-8 font-black tracking-wider shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95"
                   >
                     {isUploading ? (
                       <>

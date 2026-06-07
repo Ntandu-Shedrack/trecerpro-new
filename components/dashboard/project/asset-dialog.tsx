@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion, AnimatePresence } from "framer-motion";
@@ -67,6 +67,13 @@ function buildDynamicSchema(attributes: CategoryAttribute[]) {
   });
 }
 
+interface AssetFormValues {
+  values: {
+    barcode?: string;
+    [key: string]: string | number | boolean | null | undefined;
+  };
+}
+
 export default function AssetDialog({
   open,
   onOpenChange,
@@ -79,7 +86,7 @@ export default function AssetDialog({
   const [categoryId, setCategoryId] = React.useState<string>("");
 
   const safeCategories = React.useMemo<Category[]>(() => {
-    return Array.isArray(categories) ? categories : ((categories as any)?.data || []);
+    return Array.isArray(categories) ? categories : ((categories as unknown as { data: Category[] })?.data || []);
   }, [categories]);
 
   const selectedCategory = React.useMemo(() => {
@@ -90,8 +97,8 @@ export default function AssetDialog({
     return buildDynamicSchema(selectedCategory?.attributes || []);
   }, [selectedCategory]);
 
-  const form = useForm<any>({
-    resolver: zodResolver(dynamicSchema),
+  const form = useForm<AssetFormValues>({
+    resolver: zodResolver(dynamicSchema) as unknown as Resolver<AssetFormValues>,
     defaultValues: {
       values: {},
     },
@@ -117,7 +124,7 @@ export default function AssetDialog({
   const handleCategoryChange = (newCategoryId: string) => {
     setCategoryId(newCategoryId);
     const category = safeCategories.find(c => c.id === newCategoryId);
-    const initialValues: Record<string, any> = {};
+    const initialValues: Record<string, string | number | boolean | null | undefined> = {};
 
     category?.attributes.forEach(attr => {
       if (attr.type === "boolean") {
@@ -130,7 +137,7 @@ export default function AssetDialog({
     form.setValue("values", initialValues);
   };
 
-  const onSubmit = async (values: any) => {
+  const onSubmit = async (values: AssetFormValues) => {
     if (!categoryId) {
       toast.error("Please select a category");
       return;
@@ -303,7 +310,7 @@ export default function AssetDialog({
                                 <FormControl>
                                   {attr.type === "select" ? (
                                     <Select
-                                      value={field.value || ""}
+                                      value={field.value !== undefined && field.value !== null ? String(field.value) : ""}
                                       onValueChange={field.onChange}
                                     >
                                       <SelectTrigger className="h-11 bg-muted/30 border-border/80 focus:bg-card focus:ring-2 focus:ring-primary/20 font-bold text-xs text-foreground rounded-xl transition-all shadow-inner">
@@ -333,7 +340,11 @@ export default function AssetDialog({
                                       type={attr.type === "number" ? "number" : attr.type === "date" ? "date" : "text"}
                                       placeholder={`Enter ${(attr.label || attr.name || "value").toLowerCase()}...`}
                                       className="h-11 bg-muted/30 border-border/80 focus:bg-card focus:border-primary/50 focus:ring-2 focus:ring-primary/20 font-bold text-xs text-foreground rounded-xl transition-all shadow-inner"
-                                      {...field}
+                                      name={field.name}
+                                      onChange={field.onChange}
+                                      onBlur={field.onBlur}
+                                      ref={field.ref}
+                                      value={field.value === null || field.value === undefined ? "" : (typeof field.value === "boolean" ? String(field.value) : field.value as string | number)}
                                     />
                                   )}
                                 </FormControl>
