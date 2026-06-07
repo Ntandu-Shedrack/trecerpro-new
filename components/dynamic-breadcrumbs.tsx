@@ -22,6 +22,8 @@ type BreadcrumbConfig = {
 
 type Props = {
   homeLabel?: string;
+  homeHref?: string;
+  showHome?: boolean;
   labelMap?: Record<string, string>;
   configMap?: Record<string, BreadcrumbConfig>;
   className?: string;
@@ -29,6 +31,8 @@ type Props = {
 
 export function DynamicBreadcrumbs({
   homeLabel = "TracerPro",
+  homeHref = "/",
+  showHome = true,
   labelMap = {},
   configMap = {},
   className,
@@ -96,15 +100,17 @@ export function DynamicBreadcrumbs({
   return (
     <Breadcrumb className={className}>
       <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink asChild>
-            <Link href="/">{homeLabel}</Link>
-          </BreadcrumbLink>
-        </BreadcrumbItem>
+        {showHome && (
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link href={homeHref}>{homeLabel}</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+        )}
 
         {breadcrumbs.map((crumb, index) => (
           <div key={crumb.href} className="flex items-center">
-            <BreadcrumbSeparator />
+            {(showHome || index > 0) && <BreadcrumbSeparator />}
 
             <BreadcrumbItem>
               {index === breadcrumbs.length - 1 ? (
