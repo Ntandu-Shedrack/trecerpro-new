@@ -7,13 +7,12 @@ import * as z from "zod";
 import { createAsset, updateAsset } from "@/actions/asset.actions";
 import type { AssetWithCategory, Category, CategoryAttribute } from "@/types";
 import { toast } from "sonner";
-import { Box, Settings2, FileText, Layers, Loader2 } from "lucide-react";
+import { Box, Settings2, Layers, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { mapLaravelValidationErrors } from "@/lib/api/client";
@@ -29,13 +28,13 @@ interface AssetDialogProps {
 
 function buildDynamicSchema(attributes: CategoryAttribute[]) {
   const shape: Record<string, z.ZodTypeAny> = {};
-  
+
   attributes.forEach((attr) => {
     let fieldSchema: z.ZodTypeAny;
 
     if (attr.type === "number") {
       fieldSchema = z.coerce.number({
-        message: `${attr.label} must be a number`,
+        message: `${attr.label || attr.name} must be a number`,
       });
     } else if (attr.type === "boolean") {
       fieldSchema = z.boolean();
@@ -45,11 +44,11 @@ function buildDynamicSchema(attributes: CategoryAttribute[]) {
 
     if (attr.required) {
       if (attr.type === "number") {
-        fieldSchema = (fieldSchema as z.ZodNumber).min(0.0001, `${attr.label} is required`);
+        fieldSchema = (fieldSchema as z.ZodNumber).min(0.0001, `${attr.label || attr.name} is required`);
       } else if (attr.type === "boolean") {
         fieldSchema = (fieldSchema as z.ZodBoolean);
       } else {
-        fieldSchema = (fieldSchema as z.ZodString).min(1, `${attr.label} is required`);
+        fieldSchema = (fieldSchema as z.ZodString).min(1, `${attr.label || attr.name} is required`);
       }
     } else {
       if (attr.type === "boolean") {
@@ -63,8 +62,6 @@ function buildDynamicSchema(attributes: CategoryAttribute[]) {
   });
 
   return z.object({
-    name: z.string().min(1, "Asset identifier is required").max(255),
-    description: z.string().optional(),
     values: z.object(shape),
   });
 }
@@ -95,8 +92,6 @@ export default function AssetDialog({
   const form = useForm<any>({
     resolver: zodResolver(dynamicSchema),
     defaultValues: {
-      name: "",
-      description: "",
       values: {},
     },
   });
@@ -105,15 +100,14 @@ export default function AssetDialog({
     if (editingAsset) {
       setCategoryId(String(editingAsset.category_id));
       form.reset({
-        name: editingAsset.name,
-        description: editingAsset.description || "",
-        values: editingAsset.values || {},
+        values: {
+          ...editingAsset.values,
+          barcode: editingAsset.barcode || editingAsset.values?.barcode || "",
+        },
       });
     } else {
       setCategoryId("");
       form.reset({
-        name: "",
-        description: "",
         values: {},
       });
     }
@@ -123,7 +117,7 @@ export default function AssetDialog({
     setCategoryId(newCategoryId);
     const category = safeCategories.find(c => c.id === newCategoryId);
     const initialValues: Record<string, any> = {};
-    
+
     category?.attributes.forEach(attr => {
       if (attr.type === "boolean") {
         initialValues[attr.name] = false;
@@ -131,7 +125,7 @@ export default function AssetDialog({
         initialValues[attr.name] = "";
       }
     });
-    
+
     form.setValue("values", initialValues);
   };
 
@@ -141,13 +135,18 @@ export default function AssetDialog({
       return;
     }
 
+    const barcode = values.values.barcode;
+    if (!barcode) {
+      toast.error("Barcode is required");
+      return;
+    }
+
     setLoading(true);
     try {
       const formData = {
         projectId,
         categoryId,
-        name: values.name,
-        description: values.description,
+        barcode,
         values: values.values,
       };
 
@@ -181,124 +180,109 @@ export default function AssetDialog({
         <div className="p-8 pb-0">
           <DialogHeader className="mb-6">
             <div className="flex items-center gap-4">
-               <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shadow-inner">
-                  <Box className="h-6 w-6 text-primary" />
-               </div>
-               <div className="space-y-1">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center ring-1 ring-primary/20 shadow-inner">
+                <Box className="h-6 w-6 text-primary" />
+              </div>
+              <div className="space-y-1">
                 <DialogTitle className="text-2xl font-extrabold tracking-tight text-foreground">
                   {editingAsset ? "Edit Asset Details" : "Register New Asset"}
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground font-medium flex items-center gap-1.5">
                   <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                  {editingAsset 
-                    ? "Update lifecycle information and technical specifications." 
-                    : "Initialize a new asset catalog entry into your inventory system."}
+                  {editingAsset
+                    ? "Update technical specifications."
+                    : "Initialize a new asset catalog entry."}
                 </DialogDescription>
-               </div>
+              </div>
             </div>
           </DialogHeader>
         </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
-            <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
-              {/* General Information Section */}
-              <div className="space-y-6">
-                 <div className="flex items-center gap-2 mb-2">
-                   <div className="h-px flex-1 bg-border/60" />
-                   <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground px-2 whitespace-nowrap">Identity Information</span>
-                   <div className="h-px flex-1 bg-border/60" />
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <FormField
-                     control={form.control}
-                     name="name"
-                     render={({ field }) => (
-                       <FormItem>
-                         <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Asset Identifier</FormLabel>
-                         <FormControl>
-                           <div className="relative group">
-                             <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                             <Input
-                               placeholder="e.g., TRACER-2024-X1"
-                               className="pl-10 bg-muted/30 border-border/80 focus:bg-card h-11 text-sm font-semibold text-foreground shadow-inner"
-                               {...field}
-                             />
-                           </div>
-                         </FormControl>
-                         <FormMessage />
-                       </FormItem>
-                     )}
-                   />
-
-                   <div className="space-y-2">
-                     <Label className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Asset Classification</Label>
-                     <Select value={categoryId} onValueChange={handleCategoryChange} disabled={!!editingAsset}>
-                       <SelectTrigger className="bg-muted/30 border-border/80 focus:bg-card h-11 text-sm font-semibold text-foreground shadow-inner">
-                          <div className="flex items-center gap-2">
-                             <Layers className="h-4 w-4 text-muted-foreground" />
-                             <SelectValue placeholder="Select classification" />
-                          </div>
-                       </SelectTrigger>
-                       <SelectContent className="bg-card border-border text-foreground">
-                         {safeCategories.map((category) => (
-                           <SelectItem key={category.id} value={String(category.id)} className="cursor-pointer font-medium p-3">
-                              <div className="flex flex-col">
-                                 <span className="font-bold text-foreground">{category.name}</span>
-                                 <span className="text-[10px] text-muted-foreground/80 line-clamp-1">{category.description || "System standard category"}</span>
-                              </div>
-                           </SelectItem>
-                         ))}
-                       </SelectContent>
-                     </Select>
-                   </div>
-                 </div>
-
-                 <FormField
-                   control={form.control}
-                   name="description"
-                   render={({ field }) => (
-                     <FormItem>
-                       <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground ml-1">Lifecycle Description</FormLabel>
-                       <FormControl>
-                         <Textarea
-                           placeholder="Summarize the asset's purpose or current state..."
-                           className="bg-muted/30 border-border/80 focus:bg-card resize-none h-24 text-sm font-medium p-4 leading-relaxed text-foreground shadow-inner"
-                           {...field}
-                         />
-                       </FormControl>
-                       <FormMessage />
-                     </FormItem>
-                   )}
-                 />
+            {!selectedCategory ? (
+              <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
+                <div className="space-y-6">
+                  <div className="space-y-2 max-w-md mx-auto py-12 text-center">
+                    <Layers className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4 animate-pulse" />
+                    <Label className="text-sm font-bold text-foreground block mb-2">Asset Classification</Label>
+                    <Select value={categoryId} onValueChange={handleCategoryChange} disabled={!!editingAsset}>
+                      <SelectTrigger className="bg-muted/30 border-border/80 focus:bg-card h-11 text-sm font-semibold text-foreground shadow-inner">
+                        <div className="flex items-center gap-2">
+                          <Layers className="h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder="Select classification" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border text-foreground">
+                        {safeCategories.map((category) => (
+                          <SelectItem key={category.id} value={String(category.id)} className="cursor-pointer font-medium p-3 text-left">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-foreground">{category.name}</span>
+                              <span className="text-muted-foreground/80 line-clamp-1 text-xs">{category.description || "System standard category"}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-2">Choose a category to define the required asset attributes.</p>
+                  </div>
+                </div>
               </div>
+            ) : (
+              <div className="flex-1 overflow-y-auto px-8 py-2 space-y-6">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-px flex-1 bg-border/60" />
+                    <span className="font-black tracking-[0.2em] text-muted-foreground px-2 whitespace-nowrap uppercase">Asset Category</span>
+                    <div className="h-px flex-1 bg-border/60" />
+                  </div>
 
-              {/* Specifications Section */}
-              {selectedCategory && (
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold tracking-wider text-muted-foreground ml-1">Asset Classification</Label>
+                    <Select value={categoryId} onValueChange={handleCategoryChange} disabled={!!editingAsset}>
+                      <SelectTrigger className="bg-muted/30 border-border/80 focus:bg-card h-11 text-sm font-semibold text-foreground shadow-inner">
+                        <div className="flex items-center gap-2">
+                          <Layers className="h-4 w-4 text-muted-foreground" />
+                          <SelectValue placeholder="Select classification" />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent className="bg-card border-border text-foreground">
+                        {safeCategories.map((category) => (
+                          <SelectItem key={category.id} value={String(category.id)} className="cursor-pointer font-medium p-3 text-left">
+                            <div className="flex flex-col">
+                              <span className="font-bold text-foreground">{category.name}</span>
+                              <span className="text-muted-foreground/80 line-clamp-1 text-xs">{category.description || "System standard category"}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="space-y-6 pt-2 pb-6">
                   <div className="flex items-center gap-4 mb-2">
-                     <div className="h-px flex-1 bg-border/60" />
-                     <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/20 shadow-sm">
-                        <Settings2 className="h-3 w-3 text-primary/70" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80 whitespace-nowrap">Technical Specs</span>
-                     </div>
-                     <div className="h-px flex-1 bg-border/60" />
+                    <div className="h-px flex-1 bg-border/60" />
+                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 border border-primary/20 shadow-sm">
+                      <Settings2 className="h-3 w-3 text-primary/70" />
+                      <span className="font-black tracking-[0.2em] text-primary/80 whitespace-nowrap">Technical Specs</span>
+                    </div>
+                    <div className="h-px flex-1 bg-border/60" />
                   </div>
-                  
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 bg-muted/10 p-6 rounded-2xl border border-border/80 relative overflow-hidden">
-                    {selectedCategory.attributes.map((attr) => (
+                    {selectedCategory.attributes.map((attr, index) => (
                       <FormField
-                        key={attr.name}
+                        key={`${attr.name}-${index}`}
                         control={form.control}
                         name={`values.${attr.name}`}
                         render={({ field }) => (
                           <FormItem className="space-y-2">
-                            <FormLabel className="text-[11px] font-black tracking-widest text-foreground uppercase flex items-center gap-2">
+                            <FormLabel className="text-[11px] font-black tracking-widest text-foreground flex items-center gap-2">
                               {attr.label || attr.name}
                               {attr.required && <span className="text-destructive animate-pulse">*</span>}
                             </FormLabel>
-                            
+
                             <FormControl>
                               {attr.type === "select" ? (
                                 <Select
@@ -306,11 +290,11 @@ export default function AssetDialog({
                                   onValueChange={field.onChange}
                                 >
                                   <SelectTrigger className="h-10 bg-muted/30 border-border/80 font-bold text-xs text-foreground">
-                                    <SelectValue placeholder={`Choose ${attr.label || attr.name}`} />
+                                    <SelectValue placeholder={`Choose ${attr.label || attr.name || "option"}`} />
                                   </SelectTrigger>
                                   <SelectContent className="bg-card border-border text-foreground">
-                                    {attr.options?.map((opt) => (
-                                      <SelectItem key={opt} value={opt} className="font-semibold text-xs text-foreground cursor-pointer">
+                                    {attr.options?.map((opt, optIndex) => (
+                                      <SelectItem key={`${opt}-${optIndex}`} value={opt} className="font-semibold text-xs text-foreground cursor-pointer">
                                         {opt}
                                       </SelectItem>
                                     ))}
@@ -330,7 +314,7 @@ export default function AssetDialog({
                               ) : (
                                 <Input
                                   type={attr.type === "number" ? "number" : attr.type === "date" ? "date" : "text"}
-                                  placeholder={`Enter ${(attr.label || attr.name).toLowerCase()}...`}
+                                  placeholder={`Enter ${(attr.label || attr.name || "value").toLowerCase()}...`}
                                   className="h-10 bg-muted/30 border-border/80 font-bold text-xs text-foreground"
                                   {...field}
                                 />
@@ -343,22 +327,22 @@ export default function AssetDialog({
                     ))}
 
                     {selectedCategory.attributes.length === 0 && (
-                       <div className="col-span-2 py-8 flex flex-col items-center justify-center text-center space-y-2 opacity-50">
-                          <Box className="h-8 w-8 text-muted-foreground" />
-                          <p className="text-xs font-bold text-muted-foreground">No specific attributes defined for this category.</p>
-                       </div>
+                      <div className="col-span-2 py-8 flex flex-col items-center justify-center text-center space-y-2 opacity-50">
+                        <Box className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-xs font-bold text-muted-foreground">No specific attributes defined for this category.</p>
+                      </div>
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="p-8 pt-4">
               <DialogFooter className="gap-4 pt-6 border-t border-border/60">
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading} className="px-6 font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer">
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading} className="px-6 mr-auto font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer">
                   Close
                 </Button>
-                <Button type="submit" disabled={loading || !categoryId} className="px-10 h-11 font-black uppercase tracking-widest text-[10px] shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/95 border-none">
+                <Button type="submit" disabled={loading || !categoryId} className="px-10 h-11 font-black tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/95 border-none">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary-foreground" />
