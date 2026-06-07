@@ -52,7 +52,6 @@ import { getCategories } from "@/actions/category.actions";
 import type { AssetWithCategory, Category } from "@/types";
 import AssetDialog from "./asset-dialog";
 import BulkUploadDialog from "./bulk-upload-dialog";
-import AssetTableSkeleton from "./asset-table-skeleton";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const getAssetStatusConfig = (values: Record<string, any> = {}) => {
@@ -247,7 +246,14 @@ export default function AssetsTab({
           </TableHeader>
           <TableBody>
             {loading ? (
-              <AssetTableSkeleton rows={5} />
+              [1, 2, 3].map((i) => (
+                <TableRow key={i}>
+                  <TableCell><div className="h-4 w-24 bg-muted animate-pulse rounded" /></TableCell>
+                  <TableCell><div className="h-4 w-full bg-muted animate-pulse rounded" /></TableCell>
+                  <TableCell><div className="h-4 w-20 bg-muted animate-pulse rounded" /></TableCell>
+                  <TableCell><div className="h-8 w-8 bg-muted animate-pulse rounded float-right" /></TableCell>
+                </TableRow>
+              ))
             ) : assets.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-80 text-center">
@@ -304,7 +310,7 @@ export default function AssetsTab({
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
                               <span className="font-bold text-foreground truncate group-hover:text-primary transition-colors text-base leading-none">
-                                {asset.name}
+                                {asset.barcode}
                               </span>
                               <TooltipProvider>
                                 <Tooltip>
@@ -332,15 +338,6 @@ export default function AssetsTab({
                                 </Tooltip>
                               </TooltipProvider>
                             </div>
-                            {asset.description ? (
-                              <span className="text-xs text-muted-foreground line-clamp-1 mt-1 font-medium">
-                                {asset.description}
-                              </span>
-                            ) : (
-                              <span className="text-xs text-muted-foreground/60 italic mt-1 font-medium">
-                                No description provided
-                              </span>
-                            )}
                           </div>
                         </div>
                       </TableCell>
@@ -450,7 +447,7 @@ export default function AssetsTab({
             </AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete{" "}
-              <strong>{assets.find(a => a.id === deletingAssetId)?.name || "this asset"}</strong>. This action{" "}
+              <strong>{assets.find(a => a.id === deletingAssetId)?.barcode || "this asset"}</strong>. This action{" "}
               <strong>cannot be undone</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
