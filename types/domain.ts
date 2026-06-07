@@ -1,5 +1,5 @@
 export type MemberRole = "owner" | "admin" | "member";
-export type ProjectStatus = "draft" | "active" | "suspended" | "archived";
+export type ProjectStatus = "active" | "on-hold" | "completed";
 
 export interface User {
   id: number;
@@ -83,8 +83,7 @@ export interface Asset {
   id: string; // UUID
   project_id: number;
   category_id: string;
-  name: string;
-  description: string | null;
+  barcode: string;
   values: Record<string, any>; // Dynamic key-values matching the Category attributes schema
   created_at: string;
   updated_at: string;

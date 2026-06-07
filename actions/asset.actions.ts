@@ -38,14 +38,12 @@ export async function getAssets(
 export async function createAsset(formData: {
   projectId: string;
   categoryId: string;
-  name: string;
-  description?: string;
+  barcode: string;
   values: Record<string, any>;
 }) {
   try {
     const response = await api.post(`/api/projects/${formData.projectId}/assets`, {
-      name: formData.name,
-      description: formData.description || null,
+      barcode: formData.barcode,
       category_id: formData.categoryId,
       values: formData.values,
     });
@@ -64,8 +62,7 @@ export async function createAsset(formData: {
 export async function updateAsset(
   id: string,
   formData: {
-    name: string;
-    description?: string;
+    barcode: string;
     categoryId: string;
     values: Record<string, any>;
     projectId: string;
@@ -73,8 +70,7 @@ export async function updateAsset(
 ) {
   try {
     const response = await api.patch(`/api/projects/${formData.projectId}/assets/${id}`, {
-      name: formData.name,
-      description: formData.description || null,
+      barcode: formData.barcode,
       values: formData.values,
     });
 
@@ -106,14 +102,13 @@ export async function deleteAsset(id: string, projectId: string) {
 export async function bulkCreateAssets(
   projectId: string,
   categoryId: string,
-  assets: { name: string; description?: string; values: Record<string, any> }[]
+  assets: { barcode: string; values: Record<string, any> }[]
 ) {
   try {
     const response = await api.post(`/api/projects/${projectId}/assets/import`, {
       category_id: categoryId,
       assets: assets.map((asset) => ({
-        name: asset.name,
-        description: asset.description || null,
+        barcode: asset.barcode,
         values: asset.values || {},
       })),
     });
