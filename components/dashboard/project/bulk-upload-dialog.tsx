@@ -53,8 +53,7 @@ interface BulkUploadDialogProps {
 }
 
 type ParsedAsset = {
-  name: string;
-  description?: string;
+  barcode: string;
   values: Record<string, any>;
 };
 
@@ -100,7 +99,7 @@ export default function BulkUploadDialog({
   const handleDownloadSample = () => {
     if (!selectedCategory) return;
 
-    const headers = ["name", "description"];
+    const headers = ["barcode"];
     selectedCategory.attributes.forEach((attr) => {
       headers.push(attr.name);
     });
@@ -152,8 +151,7 @@ export default function BulkUploadDialog({
       }
 
       const shape: Record<string, z.ZodTypeAny> = {
-        name: z.string().min(1, "Name is required"),
-        description: z.string().optional().nullable(),
+        barcode: z.string().min(1, "Barcode is required"),
       };
 
       selectedCategory.attributes.forEach((attr) => {
@@ -200,8 +198,7 @@ export default function BulkUploadDialog({
         const rowData = row as Record<string, any>;
 
         const cleanedRow: Record<string, any> = {
-          name: rowData["name"]?.toString().trim() || rowData["Asset Name"]?.toString().trim() || "",
-          description: rowData["description"]?.toString().trim() || "",
+          barcode: rowData["barcode"]?.toString().trim() || rowData["Asset Barcode"]?.toString().trim() || "",
         };
 
         selectedCategory.attributes.forEach((attr) => {
@@ -233,14 +230,12 @@ export default function BulkUploadDialog({
             });
           });
         } else {
-          const { name, description, ...values } = validation.data as {
-            name: string;
-            description?: string | null;
+          const { barcode, ...values } = validation.data as {
+            barcode: string;
             [key: string]: any;
           };
           newParsedData.push({
-            name,
-            description: description || undefined,
+            barcode,
             values: values || {},
           });
         }
@@ -460,8 +455,7 @@ export default function BulkUploadDialog({
                     <Table>
                       <TableHeader className="bg-muted/30 sticky top-0 z-10 border-b border-border/60">
                         <TableRow>
-                          <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Name</TableHead>
-                          <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description</TableHead>
+                          <TableHead className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Barcode</TableHead>
                           {selectedCategory?.attributes.map((attr) => (
                             <TableHead key={attr.name} className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                               {attr.label || attr.name}
@@ -472,8 +466,7 @@ export default function BulkUploadDialog({
                       <TableBody>
                         {parsedData.slice(0, 10).map((row, idx) => (
                           <TableRow key={idx} className="text-sm border-b border-border/40 hover:bg-muted/10">
-                            <TableCell className="font-medium text-foreground">{row.name}</TableCell>
-                            <TableCell className="text-muted-foreground">{row.description || "-"}</TableCell>
+                            <TableCell className="font-medium text-foreground">{row.barcode}</TableCell>
                             {selectedCategory?.attributes.map((attr) => (
                               <TableCell key={attr.name} className="text-muted-foreground/80">
                                 {row.values[attr.name] !== undefined ? String(row.values[attr.name]) : "-"}
