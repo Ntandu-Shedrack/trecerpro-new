@@ -114,6 +114,7 @@ export default function BulkUploadDialog({
     const sampleRow = ["BARCODE001"];
 
     selectedCategory.attributes.forEach((attr) => {
+      if (attr.name === "barcode") return;
       headers.push(attr.name);
 
       let sampleVal = "";
@@ -186,6 +187,7 @@ export default function BulkUploadDialog({
       };
 
       selectedCategory.attributes.forEach((attr) => {
+        if (attr.name === "barcode") return;
         let fieldSchema: z.ZodTypeAny;
 
         if (attr.type === "number") {
@@ -233,6 +235,7 @@ export default function BulkUploadDialog({
         };
 
         selectedCategory.attributes.forEach((attr) => {
+          if (attr.name === "barcode") return;
           const val = rowData[attr.name] ?? rowData[attr.label];
 
           if (val !== undefined && val !== null && val !== "") {
@@ -527,22 +530,26 @@ export default function BulkUploadDialog({
                       <TableHeader className="bg-muted/30 sticky top-0 z-10 border-b border-border/60">
                         <TableRow>
                           <TableHead className="text-xs font-black uppercase tracking-wider text-muted-foreground p-3">Barcode</TableHead>
-                          {selectedCategory?.attributes.map((attr) => (
-                            <TableHead key={attr.name} className="text-xs font-black uppercase tracking-wider text-muted-foreground p-3">
-                              {attr.label || attr.name}
-                            </TableHead>
-                          ))}
+                          {selectedCategory?.attributes
+                            .filter((attr) => attr.name !== "barcode")
+                            .map((attr) => (
+                              <TableHead key={attr.name} className="text-xs font-black uppercase tracking-wider text-muted-foreground p-3">
+                                {attr.label || attr.name}
+                              </TableHead>
+                            ))}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {parsedData.slice(0, 10).map((row, idx) => (
                           <TableRow key={idx} className="text-sm border-b border-border/40 hover:bg-muted/15 transition-all">
                             <TableCell className="font-bold text-foreground p-3">{row.barcode}</TableCell>
-                            {selectedCategory?.attributes.map((attr) => (
-                              <TableCell key={attr.name} className="text-muted-foreground/80 p-3 font-semibold">
-                                {row.values[attr.name] !== undefined ? String(row.values[attr.name]) : "-"}
-                              </TableCell>
-                            ))}
+                            {selectedCategory?.attributes
+                              .filter((attr) => attr.name !== "barcode")
+                              .map((attr) => (
+                                <TableCell key={attr.name} className="text-muted-foreground/80 p-3 font-semibold">
+                                  {row.values[attr.name] !== undefined ? String(row.values[attr.name]) : "-"}
+                                </TableCell>
+                              ))}
                           </TableRow>
                         ))}
                       </TableBody>
