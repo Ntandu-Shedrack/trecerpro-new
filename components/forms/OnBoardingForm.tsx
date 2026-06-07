@@ -12,12 +12,12 @@ import { toast } from "sonner";
 import { Organization } from "@/types";
 import { motion } from "framer-motion";
 
-interface OnboardingFlowProps {
+interface OnboardingFormProps {
   userName: string;
   userEmail: string;
 }
 
-export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
+export function OnboardingForm({ userName, userEmail }: OnboardingFormProps) {
   const router = useRouter();
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
@@ -119,28 +119,28 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
     <div className="max-w-6xl w-full mx-auto flex flex-col items-center">
       {/* Welcome banner */}
       <div className="text-center mb-10 max-w-2xl">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary font-medium text-xs mb-4"
         >
           <Sparkles className="h-3.5 w-3.5" /> Setup your workspace
         </motion.div>
-        <motion.h1 
+        <motion.h1
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3 animate-fade-in"
+          className="text-4xl font-extrabold text-foreground tracking-tight mb-3 animate-fade-in"
         >
           Welcome to TracerPro, {userName.split(" ")[0]}!
         </motion.h1>
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="text-slate-500 text-lg"
+          className="text-muted-foreground text-lg"
         >
-          To get started, create a new workspace or join an existing one matching your email domain <span className="font-semibold text-slate-800">@{emailDomain}</span>.
+          To get started, create a new workspace or join an existing one matching your email domain <span className="font-semibold text-foreground">@{emailDomain}</span>.
         </motion.p>
       </div>
 
@@ -151,18 +151,18 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="h-full border-slate-200/80 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col backdrop-blur-sm bg-white/70">
+          <Card className="h-full border-border/80 shadow-md hover:shadow-lg hover:border-primary/40 hover:shadow-[0_0_20px_-3px_rgba(19,127,236,0.15)] transition-all duration-300 flex flex-col backdrop-blur-sm bg-card/75">
             <CardHeader className="pb-4">
-              <div className="h-12 w-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 border border-indigo-100">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4 border border-primary/20">
                 <Plus className="h-6 w-6" />
               </div>
-              <CardTitle className="text-2xl font-bold text-slate-900">Create a new workspace</CardTitle>
+              <CardTitle className="text-2xl font-bold text-foreground">Create a new workspace</CardTitle>
               <CardDescription>Establish a fresh secure workspace environment for your assets, projects, and activities.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-between">
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-1">
-                  <Label htmlFor="org-name" className="text-slate-700 font-medium">Workspace Name</Label>
+                  <Label htmlFor="org-name" className="text-foreground/80 font-medium">Workspace Name</Label>
                   <Input
                     id="org-name"
                     placeholder="Acme Corp"
@@ -172,29 +172,29 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
                       setOrgSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""));
                     }}
                     required
-                    className="h-10 border-slate-200"
+                    className="h-10 border-input bg-background/50 focus-visible:ring-primary focus-visible:ring-offset-0"
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="org-slug" className="text-slate-700 font-medium">Workspace Slug (URL-friendly)</Label>
+                  <Label htmlFor="org-slug" className="text-foreground/80 font-medium">Workspace Slug (URL-friendly)</Label>
                   <div className="relative">
                     <Input
                       id="org-slug"
                       placeholder="acme-corp"
                       value={orgSlug}
                       onChange={(e) => setOrgSlug(e.target.value.toLowerCase().replace(/\s+/g, "-"))}
-                      className="h-10 pr-20 border-slate-200"
+                      className="h-10 pr-20 border-input bg-background/50 focus-visible:ring-primary focus-visible:ring-offset-0"
                     />
-                    <span className="absolute right-3 top-2.5 text-xs text-slate-400 select-none">
+                    <span className="absolute right-3 top-2.5 text-xs text-muted-foreground select-none">
                       optional
                     </span>
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  disabled={isCreating} 
-                  className="w-full h-11 text-white font-semibold transition-all duration-200 flex items-center justify-center gap-2 mt-6 cursor-pointer"
+                <Button
+                  type="submit"
+                  disabled={isCreating}
+                  className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200 flex items-center justify-center gap-2 mt-6 cursor-pointer shadow-md"
                 >
                   {isCreating ? (
                     <>
@@ -217,38 +217,38 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card className="h-full border-slate-200/80 shadow-md hover:shadow-lg transition-all duration-300 flex flex-col backdrop-blur-sm bg-white/70">
+          <Card className="h-full border-border/80 shadow-md hover:shadow-lg hover:border-primary/40 hover:shadow-[0_0_20px_-3px_rgba(19,127,236,0.15)] transition-all duration-300 flex flex-col backdrop-blur-sm bg-card/75">
             <CardHeader className="pb-4">
-              <div className="h-12 w-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4 border border-teal-100">
+              <div className="h-12 w-12 rounded-2xl bg-teal-500/10 text-teal-500 flex items-center justify-center mb-4 border border-teal-500/20">
                 <Building2 className="h-6 w-6" />
               </div>
-              <CardTitle className="text-2xl font-bold text-slate-900">Join existing workspace</CardTitle>
+              <CardTitle className="text-2xl font-bold text-foreground">Join existing workspace</CardTitle>
               <CardDescription>Discover workspaces registered under your email domain context.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-start">
               {isLoadingOrgs ? (
-                <div className="flex flex-col items-center justify-center py-12 text-slate-400 space-y-2">
+                <div className="flex flex-col items-center justify-center py-12 text-muted-foreground space-y-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary animate-pulse" />
                   <span className="text-sm">Searching matching domains...</span>
                 </div>
               ) : isPublicDomain ? (
-                <div className="rounded-xl border border-amber-100 bg-amber-50/70 p-4 text-sm text-amber-800 space-y-2">
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-sm text-amber-600 dark:text-amber-400 space-y-2">
                   <p className="font-semibold">Public Domains Disabled</p>
-                  <p className="text-amber-700/90 leading-relaxed">
+                  <p className="text-amber-700/90 dark:text-amber-400/90 leading-relaxed">
                     You registered with a public email provider (<span className="font-semibold">{emailDomain}</span>). Auto-joining workspaces via public email domains is disabled to ensure organizational security. Please create a new workspace.
                   </p>
                 </div>
               ) : suggestedOrgs.length === 0 ? (
-                <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-6 text-center text-sm text-slate-500 space-y-2 my-auto">
-                  <Building2 className="h-8 w-8 text-slate-300 mx-auto mb-2" />
-                  <p className="font-medium text-slate-800">No matching workspaces found</p>
-                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                    We couldn't find any existing TracerPro workspaces matching the email domain <span className="font-semibold text-slate-600">@{emailDomain}</span>. You can create a new workspace using the form.
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-6 text-center text-sm text-muted-foreground space-y-2 my-auto">
+                  <Building2 className="h-8 w-8 text-muted-foreground/60 mx-auto mb-2" />
+                  <p className="font-medium text-foreground">No matching workspaces found</p>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    We couldn't find any existing TracerPro workspaces matching the email domain <span className="font-semibold text-foreground/80">@{emailDomain}</span>. You can create a new workspace using the form.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-xs font-semibold text-slate-500 tracking-wider uppercase mb-2">
+                  <p className="text-xs font-semibold text-muted-foreground tracking-wider uppercase mb-2">
                     Available Workspaces ({suggestedOrgs.length})
                   </p>
                   <div className="space-y-2.5 max-h-[220px] overflow-y-auto pr-1">
@@ -257,48 +257,47 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
                       const requiresApproval = org.require_join_approval;
 
                       return (
-                        <div 
-                          key={org.id} 
-                          className="flex items-center justify-between p-3 rounded-xl border border-slate-200 bg-white hover:border-teal-300 hover:bg-teal-50/10 transition-all duration-200 group"
+                        <div
+                          key={org.id}
+                          className="flex items-center justify-between p-3 rounded-xl border border-border bg-card/50 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-9 w-9 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-sm uppercase">
+                            <div className="h-9 w-9 rounded-lg bg-muted text-muted-foreground flex items-center justify-center font-bold text-sm uppercase">
                               {org.name.charAt(0)}
                             </div>
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="font-semibold text-slate-800 text-sm group-hover:text-slate-900 transition-colors">{org.name}</p>
+                                <p className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{org.name}</p>
                                 {isPending ? (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-amber-500/10 text-amber-500 border border-amber-500/20">
                                     Pending Approval
                                   </span>
                                 ) : requiresApproval ? (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-primary/10 text-primary border border-primary/20">
                                     Needs Request
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                                     Auto-Join
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-slate-400">
+                              <p className="text-xs text-muted-foreground">
                                 {org.pivot?.role === "owner" ? "Owned" : "Workspace"} • domain matching
                               </p>
                             </div>
                           </div>
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant={isPending ? "ghost" : requiresApproval ? "secondary" : "outline"}
                             disabled={isJoining !== null || isPending}
                             onClick={() => handleJoin(org.id)}
-                            className={`h-8 transition-all duration-200 cursor-pointer ${
-                              isPending 
-                                ? "text-slate-400 bg-slate-50 cursor-not-allowed" 
-                                : requiresApproval 
-                                  ? "text-indigo-600 border-indigo-200 hover:bg-indigo-50" 
-                                  : "text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-                            }`}
+                            className={`h-8 transition-all duration-200 cursor-pointer ${isPending
+                                ? "text-muted-foreground bg-muted/50 cursor-not-allowed"
+                                : requiresApproval
+                                  ? "text-primary border-primary/20 hover:bg-primary/10"
+                                  : "text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/10"
+                              }`}
                           >
                             {isJoining === org.id ? (
                               <Loader2 className="h-3 w-3 animate-spin" />
@@ -322,17 +321,17 @@ export function OnboardingFlow({ userName, userEmail }: OnboardingFlowProps) {
       </div>
 
       {/* Logout / Switch Accounts */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="mt-12 text-slate-400 text-sm flex items-center gap-3"
+        className="mt-12 text-muted-foreground text-sm flex items-center gap-3"
       >
-        <span>Logged in as <span className="font-semibold text-slate-600">{userEmail}</span></span>
-        <span className="text-slate-300">|</span>
-        <button 
+        <span>Logged in as <span className="font-semibold text-foreground/80">{userEmail}</span></span>
+        <span className="text-border">|</span>
+        <button
           onClick={handleLogout}
-          className="text-slate-500 hover:text-red-500 font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+          className="text-muted-foreground hover:text-destructive font-medium inline-flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <LogOut className="h-3.5 w-3.5" /> Logout
         </button>
