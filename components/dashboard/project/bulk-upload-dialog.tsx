@@ -103,12 +103,39 @@ export default function BulkUploadDialog({
   const handleDownloadSample = () => {
     if (!selectedCategory) return;
 
+    const escapeCsvCell = (val: string) => {
+      if (val.includes(",") || val.includes('"') || val.includes("\n") || val.includes("\r")) {
+        return `"${val.replace(/"/g, '""')}"`;
+      }
+      return val;
+    };
+
     const headers = ["barcode"];
+    const sampleRow = ["BARCODE001"];
+
     selectedCategory.attributes.forEach((attr) => {
       headers.push(attr.name);
+
+      let sampleVal = "";
+      if (attr.type === "number") {
+        sampleVal = "100";
+      } else if (attr.type === "boolean") {
+        sampleVal = "true";
+      } else if (attr.type === "select" && attr.options && attr.options.length > 0) {
+        sampleVal = attr.options[0];
+      } else if (attr.type === "date") {
+        sampleVal = new Date().toISOString().split("T")[0];
+      } else {
+        sampleVal = `Sample ${attr.label || attr.name}`;
+      }
+      sampleRow.push(sampleVal);
     });
 
-    const csvContent = headers.join(",") + "\n";
+    const csvContent = [
+      headers.map(escapeCsvCell).join(","),
+      sampleRow.map(escapeCsvCell).join(",")
+    ].join("\n") + "\n";
+
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
