@@ -158,16 +158,21 @@ export default function AssetDialog({
       }
 
       if (res.error) {
-        if (typeof res.error === "object" && res.error.errors) {
-          mapLaravelValidationErrors(res.error.errors, form.setError);
-        } else {
+        if (typeof res.error === "string") {
           toast.error(res.error);
+        } else {
+          const apiError = res.error as { message?: string; errors?: Record<string, string[]> };
+          if (apiError.errors) {
+            mapLaravelValidationErrors(apiError.errors, form.setError);
+          } else {
+            toast.error(apiError.message || "An error occurred");
+          }
         }
       } else {
         toast.success(editingAsset ? "Asset updated successfully" : "Asset created successfully");
         onSuccess();
       }
-    } catch (err) {
+    } catch {
       toast.error("An error occurred");
     } finally {
       setLoading(false);
