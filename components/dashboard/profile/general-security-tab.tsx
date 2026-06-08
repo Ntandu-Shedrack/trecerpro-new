@@ -9,7 +9,7 @@ import {
   confirmTwoFactor,
   disableTwoFactor,
 } from "@/actions/profile.actions";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -165,127 +165,133 @@ export function GeneralSecurityTab({ user, refreshUser }: GeneralSecurityTabProp
 
   return (
     <div className="space-y-6">
-      {/* General Settings */}
-      <Card className="border border-border bg-card shadow-sm rounded-xl">
-        <form onSubmit={handleUpdateProfile}>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl font-bold flex items-center gap-2">
-              <UserIcon className="h-5 w-5 text-primary" />
-              Profile Details
-            </CardTitle>
-            <CardDescription>Update your personal information and profile configurations.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-4">
-            {profileMsg && (
-              <div className={`p-4 rounded-xl flex items-center gap-2 border text-sm animate-in slide-in-from-top-1 duration-200 ${
-                profileMsg.type === "success" 
-                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
-                  : "bg-destructive/10 text-destructive border-destructive/20"
-              }`}>
-                {profileMsg.type === "success" ? <CheckCircle className="h-4.5 w-4.5 shrink-0" /> : <ShieldAlert className="h-4.5 w-4.5 shrink-0" />}
-                <span>{profileMsg.text}</span>
+      
+      {/* Unified Profile & Password Settings Card */}
+      <Card className="border border-border bg-card shadow-sm rounded-xl overflow-hidden">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 p-6 sm:p-8">
+          
+          {/* Left Side: Profile Details */}
+          <form onSubmit={handleUpdateProfile} className="space-y-6 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
+                  <UserIcon className="h-5 w-5 text-primary" />
+                  Profile Details
+                </h3>
+                <p className="text-xs text-muted-foreground">Update your personal information and contact details.</p>
               </div>
-            )}
-            <div className="grid gap-5 max-w-lg">
-              <div className="grid gap-2">
-                <Label htmlFor="profile-name" className="text-sm font-semibold">Full Name</Label>
-                <Input
-                  id="profile-name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                  placeholder="Enter your full name"
-                  className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="profile-email" className="text-sm font-semibold">Email Address</Label>
-                <Input
-                  id="profile-email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  placeholder="name@example.com"
-                  className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
-                />
+
+              {profileMsg && (
+                <div className={`p-4 rounded-xl flex items-center gap-2 border text-sm animate-in slide-in-from-top-1 duration-200 ${
+                  profileMsg.type === "success" 
+                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                    : "bg-destructive/10 text-destructive border-destructive/20"
+                }`}>
+                  {profileMsg.type === "success" ? <CheckCircle className="h-4.5 w-4.5 shrink-0" /> : <ShieldAlert className="h-4.5 w-4.5 shrink-0" />}
+                  <span>{profileMsg.text}</span>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="profile-name" className="text-sm font-semibold">Full Name</Label>
+                  <Input
+                    id="profile-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    placeholder="Enter your full name"
+                    className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="profile-email" className="text-sm font-semibold">Email Address</Label>
+                  <Input
+                    id="profile-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="name@example.com"
+                    className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
+                  />
+                </div>
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="border-t border-border/80 px-6 py-4">
-            <Button type="submit" disabled={profileLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5">
+
+            <Button type="submit" disabled={profileLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5 w-fit mt-4">
               {profileLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : "Save Profile"}
             </Button>
-          </CardFooter>
-        </form>
-      </Card>
+          </form>
 
-      {/* Password Change Card */}
-      <Card className="border border-border bg-card shadow-sm rounded-xl">
-        <form onSubmit={handleUpdatePassword}>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-xl font-bold flex items-center gap-2">
-              <KeyRound className="h-5 w-5 text-primary" />
-              Change Password
-            </CardTitle>
-            <CardDescription>Secure your profile with a new password.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-4">
-            {passwordMsg && (
-              <div className={`p-4 rounded-xl flex items-center gap-2 border text-sm animate-in slide-in-from-top-1 duration-200 ${
-                passwordMsg.type === "success" 
-                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
-                  : "bg-destructive/10 text-destructive border-destructive/20"
-              }`}>
-                {passwordMsg.type === "success" ? <CheckCircle className="h-4.5 w-4.5 shrink-0" /> : <ShieldAlert className="h-4.5 w-4.5 shrink-0" />}
-                <span>{passwordMsg.text}</span>
+          {/* Right Side: Change Password */}
+          <form onSubmit={handleUpdatePassword} className="space-y-6 border-t md:border-t-0 md:border-l border-border/80 pt-6 md:pt-0 md:pl-8 flex flex-col justify-between">
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold flex items-center gap-2 text-foreground">
+                  <KeyRound className="h-5 w-5 text-primary" />
+                  Change Password
+                </h3>
+                <p className="text-xs text-muted-foreground">Secure your account by updating your credentials.</p>
               </div>
-            )}
-            <div className="grid gap-5 max-w-lg">
-              <div className="grid gap-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <Input
-                  id="current-password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  placeholder="••••••••"
-                  className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  placeholder="Minimum 8 characters"
-                  className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  required
-                  placeholder="Retype your new password"
-                  className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
-                />
+
+              {passwordMsg && (
+                <div className={`p-4 rounded-xl flex items-center gap-2 border text-sm animate-in slide-in-from-top-1 duration-200 ${
+                  passwordMsg.type === "success" 
+                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                    : "bg-destructive/10 text-destructive border-destructive/20"
+                }`}>
+                  {passwordMsg.type === "success" ? <CheckCircle className="h-4.5 w-4.5 shrink-0" /> : <ShieldAlert className="h-4.5 w-4.5 shrink-0" />}
+                  <span>{passwordMsg.text}</span>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="current-password">Current Password</Label>
+                  <Input
+                    id="current-password"
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    placeholder="••••••••"
+                    className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    placeholder="Minimum 8 characters"
+                    className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Input
+                    id="confirm-password"
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    required
+                    placeholder="Retype your new password"
+                    className="h-10 transition-all duration-200 focus-visible:ring-primary focus-visible:border-primary"
+                  />
+                </div>
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="border-t border-border/80 px-6 py-4">
-            <Button type="submit" disabled={passwordLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5">
+
+            <Button type="submit" disabled={passwordLoading} className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-5 w-fit mt-4">
               {passwordLoading ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : "Update Password"}
             </Button>
-          </CardFooter>
-        </form>
+          </form>
+
+        </CardContent>
       </Card>
 
       {/* Two Factor Card */}
