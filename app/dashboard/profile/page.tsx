@@ -26,14 +26,14 @@ export default function ProfilePage() {
   const is2faActive = !!rawUser.two_factor_confirmed_at;
 
   return (
-    <div className="container max-w-5xl py-8 px-4 sm:px-6 space-y-8 animate-in fade-in duration-300">
-      
+    <div className="w-full py-8 px-4 sm:px-6 space-y-8 animate-in fade-in duration-300">
+
       {/* Premium Profile Header Card */}
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 transition-all duration-300 hover:shadow-md">
-        
+
         {/* Subtle decorative background gradient matching primary */}
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary/5 rounded-full blur-3xl -z-10 translate-x-20 -translate-y-20" />
-        
+
         <div className="relative">
           <Avatar className="h-24 w-24 border-2 border-primary ring-4 ring-primary/10 transition-transform duration-300 hover:scale-105">
             <AvatarFallback className="bg-primary/5 text-primary text-3xl font-extrabold">
@@ -56,7 +56,7 @@ export default function ProfilePage() {
               )}
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <Mail className="h-4 w-4 text-muted-foreground/70" />
@@ -74,20 +74,20 @@ export default function ProfilePage() {
       {/* Styled Dashboard Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="flex w-full overflow-x-auto justify-start border-b border-border bg-transparent p-0 h-auto gap-6 rounded-none">
-          <TabsTrigger 
-            value="general" 
+          <TabsTrigger
+            value="general"
             className="pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-1 font-semibold transition-all duration-200"
           >
             General & Security
           </TabsTrigger>
-          <TabsTrigger 
-            value="sessions" 
+          <TabsTrigger
+            value="sessions"
             className="pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-1 font-semibold transition-all duration-200"
           >
             Sessions
           </TabsTrigger>
-          <TabsTrigger 
-            value="danger" 
+          <TabsTrigger
+            value="danger"
             className="pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:bg-transparent data-[state=active]:text-destructive px-1 font-semibold transition-all duration-200"
           >
             Danger Zone
