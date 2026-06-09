@@ -168,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     setUser(data.user);
+    router.push("/dashboard/overview");
     router.refresh();
   };
 
