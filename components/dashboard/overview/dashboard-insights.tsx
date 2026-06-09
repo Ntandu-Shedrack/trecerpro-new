@@ -2,32 +2,61 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+import { Download, TrendingUp } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid
+} from "recharts";
 
-export function DashboardInsights() {
-  const distribution = [
-    { name: "Laptops", units: 4210, color: "#137fec" }, // primary brand color
-    { name: "Monitors", units: 3850, color: "#60A5FA" }, // blue-400
-    { name: "Furniture", units: 2100, color: "#818CF8" }, // indigo-400
-    { name: "Servers", units: 1240, color: "#A78BFA" }, // violet-400
-  ];
+interface DashboardInsightsProps {
+  chartData: { name: string; total: number }[];
+  categoryDistribution: { name: string; units: number }[];
+  lifecycleDistribution: { name: string; value: number }[];
+}
 
-  const lifecycle = [
-    { name: "Active", value: 9023, color: "#10B981" }, // emerald-500
-    { name: "Repairing", value: 1210, color: "#F97316" }, // orange-500
-    { name: "Retired", value: 2607, color: "#64748B" }, // slate-500
-  ];
+export function DashboardInsights({
+  categoryDistribution,
+  lifecycleDistribution
+}: DashboardInsightsProps) {
+  // Standard color palette for category distribution line chart
+  const primaryColor = "hsl(var(--primary))";
+
+  // Map lifecycle statuses to harmonious semantic colors
+  const getStatusColor = (status: string) => {
+    const s = status.toLowerCase();
+    if (s.includes("deploy") || s.includes("use") || s.includes("active")) return "#10B981"; // emerald-500
+    if (s.includes("maintain") || s.includes("repair")) return "#F97316"; // orange-500
+    if (s.includes("retired") || s.includes("dispose")) return "#64748B"; // slate-500
+    return "#3B82F6"; // default blue-500 for In Stock
+  };
+
+  const lifecycle = lifecycleDistribution.map((item) => ({
+    ...item,
+    color: getStatusColor(item.name)
+  }));
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-4">
-      {/* Left: Asset Distribution */}
+      {/* Left: Asset Distribution (Line Chart) */}
       <Card className="border-border bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-primary/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-8">
-            <h4 className="font-bold text-foreground">
-              Asset Distribution
-            </h4>
+            <div>
+              <h4 className="font-bold text-foreground">
+                Asset Distribution
+              </h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Category-wise breakdown of current inventory
+              </p>
+            </div>
             <Button
               size="sm"
               variant="outline"
@@ -37,26 +66,62 @@ export function DashboardInsights() {
             </Button>
           </div>
 
-          <div className="space-y-4">
-            {distribution.map((item) => (
-              <div key={item.name} className="space-y-2">
-                <div className="flex justify-between text-xs font-medium">
-                  <span className="text-muted-foreground uppercase">{item.name}</span>
-                  <span className="text-foreground">
-                    {item.units.toLocaleString()} units
-                  </span>
-                </div>
-                <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      width: `${(item.units / distribution.reduce((acc, i) => acc + i.units, 0)) * 100}%`,
-                      backgroundColor: item.color,
+          <div className="h-48 w-full">
+            {categoryDistribution.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+                <TrendingUp className="h-8 w-8 text-muted-foreground mb-1 animate-pulse" />
+                <p className="text-xs font-bold text-muted-foreground">No asset distribution data available.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={categoryDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid
+                    strokeDasharray="4 4"
+                    vertical={false}
+                    stroke="hsl(var(--muted-foreground))"
+                    opacity={0.05}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    stroke="hsl(var(--foreground))"
+                    fontSize={11}
+                    fontWeight={500}
+                    tickLine={false}
+                    axisLine={false}
+                    dy={10}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--foreground))"
+                    fontSize={11}
+                    fontWeight={500}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `${value}`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      borderColor: "var(--border)",
+                      borderRadius: "0.5rem",
+                      color: "var(--foreground)",
+                    }}
+                    formatter={(value: any, name: any) => {
+                      const v = typeof value === "number" ? value : Number(value ?? 0);
+                      return [v.toLocaleString(), "Units"] as [string, string];
                     }}
                   />
-                </div>
-              </div>
-            ))}
+                  <Line
+                    type="monotone"
+                    dataKey="units"
+                    stroke={primaryColor}
+                    strokeWidth={3}
+                    dot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: primaryColor }}
+                    activeDot={{ r: 6, stroke: "var(--card)", strokeWidth: 2, fill: primaryColor }}
+                    animationDuration={1500}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -65,55 +130,65 @@ export function DashboardInsights() {
       <Card className="border-border bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-primary/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-8">
-            <h4 className="font-bold text-foreground">
-              Asset Lifecycle
-            </h4>
+            <div>
+              <h4 className="font-bold text-foreground">
+                Asset Lifecycle
+              </h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Dynamic asset condition status insights
+              </p>
+            </div>
             <select className="text-xs bg-muted border border-border rounded px-2 py-1 focus:ring-1 focus:ring-primary text-foreground">
-              <option>Last 12 Months</option>
-              <option>Last 6 Months</option>
+              <option>All Assets</option>
             </select>
           </div>
 
           <div className="h-48 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={lifecycle}
-                  dataKey="value"
-                  nameKey="name"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  paddingAngle={2}
-                  stroke="var(--card)"
-                  label={({ name, percent }) =>
-                    `${name}: ${(((percent ?? 0) * 100) as number).toFixed(0)}%`
-                  }
-                >
-                  {lifecycle.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "var(--card)",
-                    borderColor: "var(--border)",
-                    borderRadius: "0.5rem",
-                    color: "var(--foreground)",
-                  }}
-                  formatter={(value: any, name: any) => {
-                    const v =
-                      typeof value === "number" ? value : Number(value ?? 0);
-                    return [v.toLocaleString(), name ?? ""] as [string, string];
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {lifecycle.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center opacity-50">
+                <div className="h-8 w-8 rounded-full border-2 border-muted border-t-primary animate-spin mb-1" />
+                <p className="text-xs font-bold text-muted-foreground">No asset lifecycle records found.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={lifecycle}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={70}
+                    paddingAngle={2}
+                    stroke="var(--card)"
+                    label={({ name, percent }) =>
+                      `${name}: ${(((percent ?? 0) * 100) as number).toFixed(0)}%`
+                    }
+                  >
+                    {lifecycle.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "var(--card)",
+                      borderColor: "var(--border)",
+                      borderRadius: "0.5rem",
+                      color: "var(--foreground)",
+                    }}
+                    formatter={(value: any, name: any) => {
+                      const v = typeof value === "number" ? value : Number(value ?? 0);
+                      return [v.toLocaleString(), name ?? ""] as [string, string];
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </div>
 
           {/* Legend */}
-          <div className="mt-6 flex gap-6 text-xs font-medium justify-center text-foreground">
+          <div className="mt-6 flex flex-wrap gap-4 text-xs font-medium justify-center text-foreground">
             {lifecycle.map((item) => (
               <div key={item.name} className="flex items-center gap-2">
                 <span

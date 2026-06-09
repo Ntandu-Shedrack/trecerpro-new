@@ -1,5 +1,3 @@
-"use server";
-
 import OnBoardingFooter from "@/components/sections/onboarding/onboarding-footer";
 
 export default async function OnBoardingLayout({

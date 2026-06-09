@@ -1,7 +1,9 @@
 import {
   LayoutDashboard,
   LifeBuoy,
+  PieChart,
   Settings2,
+  User,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,6 +23,11 @@ export const dashboardNavMain: NavItem[] = [
     isActive: true,
   },
   {
+    title: "Reports",
+    url: "/dashboard/reports",
+    icon: PieChart,
+  },
+  {
     title: "Settings",
     url: "/dashboard/settings",
     icon: Settings2,
@@ -29,6 +36,11 @@ export const dashboardNavMain: NavItem[] = [
       { title: "Billing", url: "/dashboard/settings/billing" },
       { title: "Mobile App", url: "/dashboard/settings/mobile-app" },
     ],
+  },
+  {
+    title: "Profile",
+    url: "/dashboard/profile",
+    icon: User,
   },
 ];
 

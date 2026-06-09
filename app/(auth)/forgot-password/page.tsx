@@ -1,5 +1,13 @@
-import AuthForm from "@/components/forms/AuthForm";
+"use client";
+
+import { Suspense } from "react";
+import AuthForm from "@/components/auth/auth-form";
 
 export default function ForgotPasswordPage() {
-  return <AuthForm mode="forgot-password" />;
+  return (
+    <Suspense fallback={null}>
+      <AuthForm initialMode="forgot-password" />
+    </Suspense>
+  );
 }
+

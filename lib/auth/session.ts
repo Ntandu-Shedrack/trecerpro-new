@@ -25,7 +25,9 @@ export const fetchCurrentUser = cache(async (): Promise<User | null> => {
 export function getOrgIdFromUser(user: User | null): string | null {
   if (!user) return null;
   const orgId =
-    user.current_organization?.id ?? user.currentOrganization?.id ?? null;
+    user.current_organization?.id ??
+    user.currentOrganization?.id ??
+    (user.organizations && user.organizations.length > 0 ? user.organizations[0].id : null);
   return orgId != null ? String(orgId) : null;
 }
 

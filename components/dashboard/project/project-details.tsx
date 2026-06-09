@@ -34,20 +34,16 @@ interface ProjectDetailsViewProps {
     categoryCount: number;
   };
   initialAssets?: AssetWithCategory[];
-  initialAssetsCount?: number;
   initialCategories?: Category[];
   initialActivities?: Activity[];
-  initialActivitiesTotalPages?: number;
 }
 
 export default function ProjectDetailsView({
   project,
   stats,
   initialAssets = [],
-  initialAssetsCount = 0,
   initialCategories = [],
   initialActivities = [],
-  initialActivitiesTotalPages = 1,
 }: ProjectDetailsViewProps) {
   const [activeTab, setActiveTab] = React.useState("overview");
   const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
@@ -152,7 +148,6 @@ export default function ProjectDetailsView({
                 <AssetsTab
                   projectId={String(project.id)}
                   initialAssets={initialAssets}
-                  initialCount={initialAssetsCount}
                   initialCategories={initialCategories}
                 />
               </TabsContent>
@@ -161,7 +156,6 @@ export default function ProjectDetailsView({
                 <ActivityTab
                   projectId={String(project.id)}
                   initialActivities={initialActivities}
-                  initialTotalPages={initialActivitiesTotalPages}
                 />
               </TabsContent>
 

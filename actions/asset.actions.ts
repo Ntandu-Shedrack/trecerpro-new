@@ -2,7 +2,17 @@
 
 import api from "@/lib/api";
 import { revalidatePath } from "next/cache";
-import type { Asset, AssetWithCategory } from "@/types";
+import type { AssetWithCategory } from "@/types";
+
+interface ActionError {
+  response?: {
+    data?: {
+      message?: string;
+      errors?: Record<string, string[]>;
+    };
+  };
+  message?: string;
+}
 
 /**
  * Fetches paginated assets for a specific project.
@@ -10,25 +20,24 @@ import type { Asset, AssetWithCategory } from "@/types";
 export async function getAssets(
   projectId: string,
   options: {
-    page?: number;
-    limit?: number;
     search?: string;
   } = {}
 ) {
   try {
-    const { page = 1, limit = 10, search = "" } = options;
+    const { search = "" } = options;
     const response = await api.get(`/api/projects/${projectId}/assets`, {
-      params: { page, limit, search },
+      params: { search },
     });
     
     return { 
       data: response.data.data as AssetWithCategory[], 
-      count: response.data.count || 0, 
+      count: response.data.data?.length || 0, 
       error: null 
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as ActionError;
     console.error("Error fetching assets from Laravel API:", error);
-    return { data: [], count: 0, error: error.response?.data?.message || error.message };
+    return { data: [], count: 0, error: err.response?.data?.message || err.message || "An error occurred" };
   }
 }
 
@@ -39,6 +48,7 @@ export async function createAsset(formData: {
   projectId: string;
   categoryId: string;
   barcode: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   values: Record<string, any>;
 }) {
   try {
@@ -50,9 +60,10 @@ export async function createAsset(formData: {
     
     revalidatePath(`/dashboard/projects/${formData.projectId}`);
     return { data: response.data as AssetWithCategory, error: null };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as ActionError;
     console.error("Error creating asset via Laravel API:", error);
-    return { data: null, error: error.response?.data?.message || error.message };
+    return { data: null, error: err.response?.data || err.message || "An error occurred" };
   }
 }
 
@@ -64,6 +75,7 @@ export async function updateAsset(
   formData: {
     barcode: string;
     categoryId: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     values: Record<string, any>;
     projectId: string;
   }
@@ -76,9 +88,10 @@ export async function updateAsset(
 
     revalidatePath(`/dashboard/projects/${formData.projectId}`);
     return { data: response.data as AssetWithCategory, error: null };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as ActionError;
     console.error("Error updating asset via Laravel API:", error);
-    return { data: null, error: error.response?.data?.message || error.message };
+    return { data: null, error: err.response?.data || err.message || "An error occurred" };
   }
 }
 
@@ -90,9 +103,10 @@ export async function deleteAsset(id: string, projectId: string) {
     await api.delete(`/api/projects/${projectId}/assets/${id}`);
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { error: null };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as ActionError;
     console.error("Error deleting asset via Laravel API:", error);
-    return { error: error.response?.data?.message || error.message };
+    return { error: err.response?.data?.message || err.message || "An error occurred" };
   }
 }
 
@@ -102,6 +116,7 @@ export async function deleteAsset(id: string, projectId: string) {
 export async function bulkCreateAssets(
   projectId: string,
   categoryId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assets: { barcode: string; values: Record<string, any> }[]
 ) {
   try {
@@ -115,8 +130,9 @@ export async function bulkCreateAssets(
     
     revalidatePath(`/dashboard/projects/${projectId}`);
     return { data: response.data, error: null };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as ActionError;
     console.error("Error bulk creating assets via Laravel API:", error);
-    return { data: null, error: error.response?.data?.message || error.message };
+    return { data: null, error: err.response?.data?.message || err.message || "An error occurred" };
   }
 }

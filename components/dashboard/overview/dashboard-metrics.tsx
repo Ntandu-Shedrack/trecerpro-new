@@ -4,79 +4,76 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Package,
+  FolderKanban,
   Layers,
-  BadgeCheck,
   TrendingUp,
   TrendingUpIcon,
 } from "lucide-react";
+import { DashboardStats } from "@/types";
 
-export function DashboardMetrics() {
+interface DashboardMetricsProps {
+  stats: DashboardStats;
+}
+
+export function DashboardMetrics({ stats }: DashboardMetricsProps) {
+  const isGrowthPositive = stats.monthlyGrowth >= 0;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
-      {/* Total Assets */}
+      {/* Total Projects */}
       <Card className="group border-border/80 bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_20px_-3px_rgba(19,127,236,0.15)]">
         <CardContent className="p-5">
           <div className="flex items-start justify-between mb-4">
             <div className="size-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-              <Package className="h-5 w-5" />
+              <FolderKanban className="h-5 w-5" />
             </div>
-
-            <Badge
-              variant="secondary"
-              className="text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-none flex items-center gap-1"
-            >
-              <TrendingUpIcon className="h-3 w-3" />
-              4.2%
-            </Badge>
           </div>
 
           <p className="text-sm font-medium text-muted-foreground">
-            Total Assets
+            Total Projects
           </p>
 
-          <h3 className="text-2xl font-bold mt-1 text-foreground">12,840</h3>
+          <h3 className="text-2xl font-bold mt-1 text-foreground">
+            {stats.projectCount.toLocaleString()}
+          </h3>
         </CardContent>
       </Card>
 
-      {/* Asset Categories */}
+      {/* Total Categories */}
       <Card className="group border-border/80 bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_20px_-3px_rgba(19,127,236,0.15)]">
         <CardContent className="p-5">
           <div className="flex items-start justify-between mb-4">
             <div className="size-10 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
               <Layers className="h-5 w-5" />
             </div>
-
-            <Badge variant="secondary" className="bg-muted text-muted-foreground border-none">
-              Static
-            </Badge>
           </div>
 
           <p className="text-sm font-medium text-muted-foreground">
-            Asset Categories
+            Total Categories
           </p>
 
-          <h3 className="text-2xl font-bold mt-1 text-foreground">24</h3>
+          <h3 className="text-2xl font-bold mt-1 text-foreground">
+            {stats.categoryCount.toLocaleString()}
+          </h3>
         </CardContent>
       </Card>
 
-      {/* Verified Assets */}
+      {/* Total Assets */}
       <Card className="group border-border/80 bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-primary/40 hover:shadow-[0_0_20px_-3px_rgba(19,127,236,0.15)]">
         <CardContent className="p-5">
           <div className="flex items-start justify-between mb-4">
             <div className="size-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-              <BadgeCheck className="h-5 w-5" />
+              <Package className="h-5 w-5" />
             </div>
-
-            <Badge variant="secondary" className="bg-muted text-muted-foreground border-none">
-              64% Target
-            </Badge>
           </div>
 
           <p className="text-sm font-medium text-muted-foreground">
-            Verified Assets
+            Total Assets
           </p>
 
-          <h3 className="text-2xl font-bold mt-1 text-foreground">8,230</h3>
+          <h3 className="text-2xl font-bold mt-1 text-foreground">
+            {stats.assetCount.toLocaleString()}
+          </h3>
         </CardContent>
       </Card>
 
@@ -90,10 +87,14 @@ export function DashboardMetrics() {
 
             <Badge
               variant="secondary"
-              className="text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-none flex items-center gap-1"
+              className={`border-none flex items-center gap-1 ${
+                isGrowthPositive
+                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                  : "text-rose-600 dark:text-rose-400 bg-rose-500/10"
+              }`}
             >
-              <TrendingUpIcon className="h-3 w-3" />
-              12%
+              <TrendingUpIcon className={`h-3 w-3 ${!isGrowthPositive ? "rotate-180" : ""}`} />
+              {stats.monthlyGrowth}%
             </Badge>
           </div>
 
@@ -101,7 +102,9 @@ export function DashboardMetrics() {
             Monthly Growth
           </p>
 
-          <h3 className="text-2xl font-bold mt-1 text-foreground">+12%</h3>
+          <h3 className="text-2xl font-bold mt-1 text-foreground">
+            {isGrowthPositive ? "+" : ""}{stats.monthlyGrowth}%
+          </h3>
         </CardContent>
       </Card>
     </div>

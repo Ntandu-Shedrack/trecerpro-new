@@ -18,9 +18,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   const [assetsRes, categoriesRes, activitiesRes] = await Promise.all([
-    getAssets(projectId, { page: 1, limit: 10 }),
+    getAssets(projectId),
     getCategories(projectId),
-    getProjectActivities(projectId, 1, 10),
+    getProjectActivities(projectId),
   ]);
 
   return (
@@ -28,10 +28,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       project={detail.project}
       stats={detail.stats}
       initialAssets={assetsRes.data}
-      initialAssetsCount={assetsRes.count ?? 0}
       initialCategories={categoriesRes.data}
       initialActivities={activitiesRes.data ?? []}
-      initialActivitiesTotalPages={activitiesRes.totalPages ?? 1}
     />
   );
 }

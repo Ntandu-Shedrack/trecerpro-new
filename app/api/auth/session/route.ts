@@ -15,13 +15,13 @@ export async function GET() {
   try {
     const token = await getAuthToken();
     if (!token) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json(null, { status: 200 });
     }
 
     const laravelRes = await laravelFetch("/api/user");
 
     if (laravelRes.status === 401) {
-      return NextResponse.json({ user: null }, { status: 401 });
+      return NextResponse.json(null, { status: 200 });
     }
 
     const parsed = await parseLaravelJson(laravelRes);

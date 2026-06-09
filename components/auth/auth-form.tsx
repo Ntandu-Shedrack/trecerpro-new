@@ -97,6 +97,12 @@ export default function AuthForm({ initialMode = "signin" }: AuthFormProps) {
         });
         const data = await res.json();
         if (!res.ok) {
+          if (data.errors && typeof data.errors === "object") {
+            const messages = Object.values(data.errors).flat().filter(Boolean);
+            if (messages.length > 0) {
+              throw new Error(messages.join(" "));
+            }
+          }
           throw new Error(data.message || "Failed to send reset link");
         }
         toast.success(data.message || "Password reset link sent! Check your email.");
@@ -125,6 +131,12 @@ export default function AuthForm({ initialMode = "signin" }: AuthFormProps) {
 
         const data = await res.json();
         if (!res.ok) {
+          if (data.errors && typeof data.errors === "object") {
+            const messages = Object.values(data.errors).flat().filter(Boolean);
+            if (messages.length > 0) {
+              throw new Error(messages.join(" "));
+            }
+          }
           throw new Error(data.message || "Failed to reset password");
         }
 

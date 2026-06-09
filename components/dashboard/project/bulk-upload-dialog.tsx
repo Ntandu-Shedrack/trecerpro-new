@@ -345,7 +345,7 @@ export default function BulkUploadDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] bg-card border border-border/60 text-foreground overflow-hidden flex flex-col p-0 h-[85vh] sm:h-auto sm:max-h-[90vh] shadow-2xl rounded-2xl">
+      <DialogContent className="sm:max-w-[700px] bg-card border border-border/60 text-foreground overflow-hidden flex flex-col p-0 h-[85vh] sm:h-[80vh] max-h-[90vh] shadow-2xl rounded-2xl">
         <div className="p-8 pb-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-2xl font-bold text-foreground">
@@ -384,7 +384,7 @@ export default function BulkUploadDialog({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="space-y-6 flex-1 flex flex-col justify-between"
+                className="space-y-6 flex-1 flex flex-col overflow-y-auto pr-1"
               >
                 <div className="space-y-6">
                   <div className="space-y-2">
@@ -426,13 +426,12 @@ export default function BulkUploadDialog({
                         </div>
 
                         <div
-                          className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-all ${
-                            isProcessingFile 
-                              ? "border-primary bg-primary/5" 
-                              : isDragOver
-                                ? "border-primary bg-primary/10 scale-[1.02] shadow-lg shadow-primary/5"
-                                : "border-border/80 hover:border-primary/50 hover:bg-muted/15 cursor-pointer"
-                          }`}
+                          className={`border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center text-center transition-all ${isProcessingFile
+                            ? "border-primary bg-primary/5"
+                            : isDragOver
+                              ? "border-primary bg-primary/10 scale-[1.02] shadow-lg shadow-primary/5"
+                              : "border-border/80 hover:border-primary/50 hover:bg-muted/15 cursor-pointer"
+                            }`}
                           onClick={() => !isProcessingFile && fileInputRef.current?.click()}
                           onDrop={handleDrop}
                           onDragOver={handleDragOver}
@@ -564,7 +563,7 @@ export default function BulkUploadDialog({
                 </div>
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border/60">
-                  <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-muted-foreground hover:text-foreground cursor-pointer rounded-xl h-11 px-5 font-bold">
+                  <Button variant="ghost" onClick={() => onOpenChange(false)} className="text-muted-foreground mr-auto hover:text-foreground cursor-pointer rounded-xl h-11 px-5 font-bold">
                     Cancel
                   </Button>
                   <Button

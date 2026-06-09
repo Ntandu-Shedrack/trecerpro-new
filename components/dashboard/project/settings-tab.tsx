@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { 
-  Trash2, 
-  Edit2, 
-  MoreVertical, 
-  Layers, 
-  Info, 
+import { useEffect, useState, useMemo, useCallback } from "react";
+import {
+  Trash2,
+  Edit2,
+  Layers,
+  Info,
   Settings2,
   Table as TableIcon,
   Loader2,
-  MoreHorizontal,
-  Box,
   Search,
-  Plus} from "lucide-react";
+  Plus,
+  ChevronLeft,
+  ChevronRight
+} from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -29,12 +29,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import CategoryDialog from "./category-dialog";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -52,25 +51,44 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+
+  const limit = 10;
+  const totalCount = categories.length;
+  const totalPages = Math.ceil(totalCount / limit);
+
+  // Paginated categories list
+  const paginatedCategories = useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    return categories.slice(startIndex, startIndex + limit);
+  }, [categories, page, limit]);
+
+  // Adjust page number if it exceeds totalPages
+  useEffect(() => {
+    if (page > 1 && page > totalPages) {
+      setPage(Math.max(1, totalPages));
+    }
+  }, [page, totalPages]);
 
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data, error } = await getCategories(projectId);
       if (error) throw new Error(error);
-      const list = Array.isArray(data) ? data : ((data as any)?.data || []);
+      const list = Array.isArray(data) ? data : ((data as unknown as { data?: Category[] })?.data || []);
       setCategories(list);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to fetch categories");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "Failed to fetch categories");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId]);
 
   useEffect(() => {
     fetchCategories();
-  }, [projectId]);
+  }, [fetchCategories]);
 
 
   const handleDelete = async () => {
@@ -82,8 +100,9 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
       toast.success("Category deleted successfully");
       fetchCategories();
       setDeletingCategoryId(null);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete category");
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      toast.error(err.message || "Failed to delete category");
     } finally {
       setIsDeleting(false);
     }
@@ -104,7 +123,7 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
             Define different asset categories and their custom attributes.
           </p>
         </div>
-        <Button 
+        <Button
           onClick={() => {
             setEditingCategory(null);
             setIsDialogOpen(true);
@@ -142,9 +161,9 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
                   <div className="flex flex-col items-center justify-center gap-6 py-8">
                     <div className="relative">
                       <div className="h-24 w-24 rounded-full bg-primary/5 flex items-center justify-center animate-pulse">
-                         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Layers className="h-8 w-8 text-primary/40" />
-                         </div>
+                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Layers className="h-8 w-8 text-primary/40" />
+                        </div>
                       </div>
                       <div className="absolute -bottom-2 -right-2 h-10 w-10 rounded-full bg-background border border-border flex items-center justify-center shadow-lg">
                         <Search className="h-4 w-4 text-muted-foreground" />
@@ -156,7 +175,7 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
                         Your project currently has no categories. Start by defining your first category to organize your assets.
                       </p>
                     </div>
-                    <Button 
+                    <Button
                       variant="secondary"
                       onClick={() => {
                         setEditingCategory(null);
@@ -172,7 +191,7 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
               </TableRow>
             ) : (
               <AnimatePresence mode="popLayout">
-                {Array.isArray(categories) && categories.map((category, index) => (
+                {Array.isArray(categories) && paginatedCategories.map((category, index) => (
                   <motion.tr
                     key={category.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -204,79 +223,155 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
                         </span>
                       )}
                     </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap gap-1.5">
-                      {category.attributes.length > 0 ? (
-                        <>
-                          <Badge variant="secondary" className="text-[10px] h-5 bg-primary/10 text-primary border-primary/20">
-                            {category.attributes.length} fields
-                          </Badge>
-                          <div className="flex -space-x-1 overflow-hidden">
-                            {category.attributes.slice(0, 3).map((attr, idx) => (
-                              <div 
-                                key={idx}
-                                className="h-5 px-1.5 text-[9px] flex items-center bg-background border rounded-md shadow-sm"
-                                title={`${attr.name} (${attr.type})`}
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1.5">
+                        {category.attributes.length > 0 ? (
+                          <>
+                            <Badge variant="secondary" className="text-[10px] h-5 bg-primary/10 text-primary border-primary/20">
+                              {category.attributes.length} fields
+                            </Badge>
+                            <div className="flex -space-x-1 overflow-hidden">
+                              {category.attributes.slice(0, 3).map((attr, idx) => (
+                                <div
+                                  key={idx}
+                                  className="h-5 px-1.5 text-[9px] flex items-center bg-background border rounded-md shadow-sm"
+                                  title={`${attr.name} (${attr.type})`}
+                                >
+                                  {attr.name}
+                                </div>
+                              ))}
+                              {category.attributes.length > 3 && (
+                                <div className="h-5 px-1 bg-muted flex items-center text-[9px] rounded-md border">
+                                  +{category.attributes.length - 3}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">No fields</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2 opacity-50 group-hover:opacity-100 transition-all duration-200">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full border border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30 hover:scale-105 active:scale-95 shadow-sm text-muted-foreground transition-all duration-200 cursor-pointer"
+                                onClick={() => handleEdit(category)}
                               >
-                                {attr.name}
-                              </div>
-                            ))}
-                            {category.attributes.length > 3 && (
-                              <div className="h-5 px-1 bg-muted flex items-center text-[9px] rounded-md border">
-                                +{category.attributes.length - 3}
-                              </div>
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <span className="text-xs text-muted-foreground italic">No fields</span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="opacity-50 group-hover:opacity-100 transition-opacity">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full border border-border/50 hover:bg-background shadow-sm">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-52 bg-background/95 backdrop-blur-md border-border/50 p-2">
-                          <DropdownMenuItem 
-                            className="gap-3 cursor-pointer focus:bg-primary/5 rounded-lg py-2"
-                            onClick={() => handleEdit(category)}
-                          >
-                            <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-                              <Edit2 className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold">Edit Details</span>
-                              <span className="text-[10px] text-muted-foreground">Modify information</span>
-                            </div>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-border/50 my-1" />
-                          <DropdownMenuItem
-                            onClick={() => setDeletingCategoryId(String(category.id))}
-                            className="gap-3 text-destructive focus:text-destructive cursor-pointer focus:bg-destructive/5 rounded-lg py-2"
-                          >
-                            <div className="h-8 w-8 rounded-md bg-destructive/10 flex items-center justify-center text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-bold">Remove Category</span>
-                              <span className="text-[10px] text-destructive/70">Permanently delete</span>
-                            </div>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </TableCell>
-                </motion.tr>
-              ))}
-            </AnimatePresence>
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-card border-border text-foreground text-[10px] font-bold uppercase tracking-wider py-1.5 px-2.5 shadow-xl">
+                              Edit category
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full border border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 hover:scale-105 active:scale-95 shadow-sm text-muted-foreground transition-all duration-200 cursor-pointer"
+                                onClick={() => setDeletingCategoryId(String(category.id))}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-card border-border text-destructive text-[10px] font-bold uppercase tracking-wider py-1.5 px-2.5 shadow-xl">
+                              Remove Category
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
             )}
           </TableBody>
         </Table>
+
+        {totalCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-muted/10 border-t border-border/40">
+            <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest">
+              Showing {((page - 1) * limit) + 1} - {Math.min(page * limit, totalCount)} of {totalCount} categories
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 text-xs font-bold gap-2 bg-background/50 hover:bg-background border-border/60 transition-all border shadow-sm cursor-pointer disabled:opacity-50"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1 || isLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Previous</span>
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                  if (
+                    totalPages > 5 &&
+                    p !== 1 &&
+                    p !== totalPages &&
+                    Math.abs(p - page) > 1
+                  ) {
+                    if (p === 2 && page > 3) {
+                      return (
+                        <span key="ellipsis-start" className="text-muted-foreground px-1.5 text-xs font-bold">
+                          ...
+                        </span>
+                      );
+                    }
+                    if (p === totalPages - 1 && page < totalPages - 2) {
+                      return (
+                        <span key="ellipsis-end" className="text-muted-foreground px-1.5 text-xs font-bold">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
+
+                  return (
+                    <Button
+                      key={p}
+                      variant={page === p ? "default" : "outline"}
+                      size="sm"
+                      className={`h-9 w-9 text-xs font-bold transition-all border shadow-sm cursor-pointer hover:scale-105 active:scale-95 ${
+                        page === p
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background/50 hover:bg-background border-border/60"
+                      }`}
+                      onClick={() => setPage(p)}
+                      disabled={isLoading}
+                    >
+                      {p}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-3 text-xs font-bold gap-2 bg-background/50 hover:bg-background border-border/60 transition-all border shadow-sm cursor-pointer disabled:opacity-50"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages || isLoading}
+              >
+                <span className="hidden sm:inline">Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <AlertDialog open={!!deletingCategoryId} onOpenChange={(open) => !open && setDeletingCategoryId(null)}>
@@ -342,10 +437,10 @@ export default function SettingsTab({ projectId, initialCategories = [] }: Setti
         </div>
       </div>
 
-      <CategoryDialog 
-        projectId={projectId} 
-        open={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
+      <CategoryDialog
+        projectId={projectId}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
         editingCategory={editingCategory}
         onSuccess={() => {
           setIsDialogOpen(false);

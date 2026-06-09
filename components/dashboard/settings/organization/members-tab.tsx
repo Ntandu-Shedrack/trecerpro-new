@@ -25,23 +25,29 @@ export default function MembersTab() {
   const [invitations, setInvitations] = useState<OrgInvitation[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const orgId = organization?.id;
+
   const loadData = useCallback(async () => {
-    if (!organization?.id) return;
+    if (!orgId) return;
     setLoading(true);
     const [membersRes, invitationsRes] = await Promise.all([
-      getOrganizationMembers(organization.id),
-      getOrganizationInvitations(organization.id),
+      getOrganizationMembers(orgId),
+      getOrganizationInvitations(orgId),
     ]);
     setMembers(membersRes.data ?? []);
     setInvitations(invitationsRes.data ?? []);
     setLoading(false);
-  }, [organization]);
+  }, [orgId]);
 
   useEffect(() => {
-    if (isLoaded && organization?.id) {
-      void loadData();
+    if (isLoaded) {
+      if (orgId) {
+        void loadData();
+      } else {
+        setLoading(false);
+      }
     }
-  }, [isLoaded, organization, loadData]);
+  }, [isLoaded, orgId, loadData]);
 
   if (!isLoaded || loading) {
     return (
@@ -143,6 +149,16 @@ export default function MembersTab() {
           {invitations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <p className="text-sm text-muted-foreground">No pending invitations</p>
+              {canManage && (
+                <InviteMemberDialog
+                  organizationId={organization.id}
+                  onInvited={loadData}
+                >
+                  <Button variant="outline" className="mt-4">
+                    Invite a member
+                  </Button>
+                </InviteMemberDialog>
+              )}
             </div>
           ) : (
             <InvitationsList

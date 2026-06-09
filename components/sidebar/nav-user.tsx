@@ -95,20 +95,10 @@ export function NavUser() {
 
             <DropdownMenuSeparator />
 
-            {/* UPGRADE */}
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <Sparkles className="mr-2 h-4 w-4" />
-                Upgrade to Pro
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-
-            <DropdownMenuSeparator />
-
             {/* ACCOUNT ACTIONS */}
             <DropdownMenuGroup>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/settings" className="flex w-full items-center">
+                <Link href="/dashboard/profile" className="flex w-full items-center">
                   <BadgeCheck className="mr-2 h-4 w-4" />
                   Account
                 </Link>

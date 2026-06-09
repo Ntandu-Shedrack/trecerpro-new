@@ -100,22 +100,34 @@ export function InviteMemberDialog({
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label>Role</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["org:member", "org:admin"] as const).map((r) => (
+            <div className="space-y-2.5">
+              <Label className="text-sm font-medium">Role</Label>
+              <div className="flex flex-col gap-2">
+                {[
+                  {
+                    value: "org:member" as const,
+                    title: "Member",
+                    description: "Can view and manage assets they have access to. Cannot manage settings, members, or billing.",
+                  },
+                  {
+                    value: "org:admin" as const,
+                    title: "Admin",
+                    description: "Full access to settings, members, categories, and all projects within the organization.",
+                  },
+                ].map((r) => (
                   <button
-                    key={r}
+                    key={r.value}
                     type="button"
-                    onClick={() => setRole(r)}
+                    onClick={() => setRole(r.value)}
                     className={cn(
-                      "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                      role === r
-                        ? "border-primary bg-primary/5 text-primary"
-                        : "border-muted hover:bg-muted/50"
+                      "flex flex-col items-start rounded-xl border p-3 text-left transition-all hover:bg-muted/50",
+                      role === r.value
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-muted"
                     )}
                   >
-                    {r === "org:admin" ? "Admin" : "Member"}
+                    <span className="font-semibold text-sm text-foreground">{r.title}</span>
+                    <span className="text-xs text-muted-foreground mt-1 leading-relaxed">{r.description}</span>
                   </button>
                 ))}
               </div>

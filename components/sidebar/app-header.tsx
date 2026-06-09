@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import { Search, Bell } from "lucide-react";
-import { DynamicBreadcrumbs } from "@/components/dynamic-breadcrumbs";
+import { DynamicBreadcrumbs } from "@/components/sidebar/dynamic-breadcrumbs";
 
 export function AppHeader() {
   return (

@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   Plus,
   Search,
-  MoreHorizontal,
   Edit2,
   Trash2,
   Tag,
@@ -33,13 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+
 import {
   Tooltip,
   TooltipContent,
@@ -54,7 +47,7 @@ import AssetDialog from "./asset-dialog";
 import BulkUploadDialog from "./bulk-upload-dialog";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
-const getAssetStatusConfig = (values: Record<string, any> = {}) => {
+const getAssetStatusConfig = (values: Record<string, unknown> = {}) => {
   const statusKey = Object.keys(values || {}).find((k) => /status|state/i.test(k));
   const statusVal = statusKey ? String(values[statusKey]).trim() : "RUNNING";
   const statusUpper = statusVal.toUpperCase();
@@ -80,22 +73,19 @@ const getAssetStatusConfig = (values: Record<string, any> = {}) => {
 interface AssetsTabProps {
   projectId: string;
   initialAssets?: AssetWithCategory[];
-  initialCount?: number;
   initialCategories?: Category[];
 }
 
 export default function AssetsTab({
   projectId,
   initialAssets = [],
-  initialCount = 0,
   initialCategories = [],
 }: AssetsTabProps) {
   const [assets, setAssets] = React.useState<AssetWithCategory[]>(initialAssets);
   const [categories, setCategories] = React.useState<Category[]>(
-    Array.isArray(initialCategories) ? initialCategories : ((initialCategories as any)?.data || [])
+    Array.isArray(initialCategories) ? initialCategories : ((initialCategories as unknown as { data?: Category[] })?.data || [])
   );
   const [loading, setLoading] = React.useState(initialAssets.length === 0);
-  const [totalCount, setTotalCount] = React.useState(initialCount);
   const [page, setPage] = React.useState(1);
   const [search, setSearch] = React.useState("");
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -106,26 +96,51 @@ export default function AssetsTab({
 
   const limit = 10;
 
+  // Filter assets client-side based on search query
+  const filteredAssets = React.useMemo(() => {
+    if (!search) return assets;
+    const searchLower = search.toLowerCase();
+    return assets.filter((asset) => {
+      const barcodeMatch = asset.barcode?.toLowerCase().includes(searchLower);
+      const categoryMatch = asset.category?.name?.toLowerCase().includes(searchLower);
+      const valuesMatch = Object.values(asset.values || {}).some((val) =>
+        String(val).toLowerCase().includes(searchLower)
+      );
+      return barcodeMatch || categoryMatch || valuesMatch;
+    });
+  }, [assets, search]);
+
+  const totalCount = filteredAssets.length;
+  const totalPages = Math.ceil(totalCount / limit);
+
+  // Paginated assets to display in current view
+  const paginatedAssets = React.useMemo(() => {
+    const startIndex = (page - 1) * limit;
+    return filteredAssets.slice(startIndex, startIndex + limit);
+  }, [filteredAssets, page, limit]);
+
+  // Adjust page number if it exceeds totalPages
+  React.useEffect(() => {
+    if (page > 1 && page > totalPages) {
+      setPage(Math.max(1, totalPages));
+    }
+  }, [page, totalPages]);
+
   const fetchAssets = React.useCallback(async () => {
     setLoading(true);
     try {
-      const { data, count, error } = await getAssets(projectId, {
-        page,
-        limit,
-        search
-      });
+      const { data, error } = await getAssets(projectId);
       if (error) {
         toast.error(error);
       } else {
         setAssets(data);
-        setTotalCount(count || 0);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch assets");
     } finally {
       setTimeout(() => setLoading(false), 300);
     }
-  }, [projectId, page, search]);
+  }, [projectId]);
 
   const fetchCategories = React.useCallback(async () => {
     try {
@@ -133,21 +148,21 @@ export default function AssetsTab({
       if (error) {
         toast.error(error);
       } else {
-        const list = Array.isArray(data) ? data : ((data as any)?.data || []);
+        const list = Array.isArray(data) ? data : ((data as unknown as { data?: Category[] })?.data || []);
         setCategories(list);
       }
-    } catch (err) {
+    } catch {
       toast.error("Failed to fetch categories");
     }
   }, [projectId]);
 
   React.useEffect(() => {
-    if (page === 1 && !search && initialAssets.length > 0) {
+    if (initialAssets.length > 0) {
       setLoading(false);
       return;
     }
     fetchAssets();
-  }, [fetchAssets, page, search, initialAssets.length]);
+  }, [fetchAssets, initialAssets.length]);
 
   React.useEffect(() => {
     if (initialCategories.length > 0) return;
@@ -176,14 +191,12 @@ export default function AssetsTab({
         fetchAssets();
         setDeletingAssetId(null);
       }
-    } catch (err) {
+    } catch {
       toast.error("An error occurred while deleting the asset");
     } finally {
       setIsDeleting(false);
     }
   };
-
-  const totalPages = Math.ceil(totalCount / limit);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-700">
@@ -254,7 +267,7 @@ export default function AssetsTab({
                   <TableCell><div className="h-8 w-8 bg-muted animate-pulse rounded float-right" /></TableCell>
                 </TableRow>
               ))
-            ) : assets.length === 0 ? (
+            ) : filteredAssets.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} className="h-80 text-center">
                   <div className="flex flex-col items-center justify-center gap-6 py-8">
@@ -291,7 +304,7 @@ export default function AssetsTab({
               </TableRow>
             ) : (
               <AnimatePresence mode="popLayout">
-                {assets.map((asset, index) => {
+                {paginatedAssets.map((asset, index) => {
                   const statusCfg = getAssetStatusConfig(asset.values);
                   return (
                     <motion.tr
@@ -360,44 +373,45 @@ export default function AssetsTab({
                         </div>
                       </TableCell>
                       <TableCell className="py-4 px-6 text-right">
-                        <div className="opacity-60 group-hover:opacity-100 transition-opacity">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full border border-border/80 hover:bg-muted shadow-sm text-muted-foreground hover:text-foreground">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-52 bg-card border-border p-2 text-foreground shadow-2xl">
-                              <DropdownMenuItem
-                                className="gap-3 cursor-pointer focus:bg-muted rounded-lg py-2"
-                                onClick={() => {
-                                  setEditingAsset(asset);
-                                  setIsDialogOpen(true);
-                                }}
-                              >
-                                <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                        <div className="flex items-center justify-end gap-2 opacity-60 group-hover:opacity-100 transition-all duration-200">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full border border-border/80 hover:bg-primary/10 hover:text-primary hover:border-primary/30 hover:scale-105 active:scale-95 shadow-sm text-muted-foreground transition-all duration-200 cursor-pointer"
+                                  onClick={() => {
+                                    setEditingAsset(asset);
+                                    setIsDialogOpen(true);
+                                  }}
+                                >
                                   <Edit2 className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-bold">Edit Details</span>
-                                  <span className="text-[10px] text-muted-foreground">Modify information</span>
-                                </div>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator className="bg-border/60 my-1" />
-                              <DropdownMenuItem
-                                className="gap-3 text-destructive focus:text-destructive cursor-pointer focus:bg-destructive/10 rounded-lg py-2"
-                                onClick={() => setDeletingAssetId(String(asset.id))}
-                              >
-                                <div className="h-8 w-8 rounded-md bg-destructive/10 flex items-center justify-center text-destructive">
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-card border-border text-foreground text-[10px] font-bold uppercase tracking-wider py-1.5 px-2.5 shadow-xl">
+                                Edit details
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full border border-border/80 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 hover:scale-105 active:scale-95 shadow-sm text-muted-foreground transition-all duration-200 cursor-pointer"
+                                  onClick={() => setDeletingAssetId(String(asset.id))}
+                                >
                                   <Trash2 className="h-4 w-4" />
-                                </div>
-                                <div className="flex flex-col">
-                                  <span className="text-sm font-bold">Remove Asset</span>
-                                  <span className="text-[10px] text-destructive/70">Permanently delete</span>
-                                </div>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-card border-border text-destructive text-[10px] font-bold uppercase tracking-wider py-1.5 px-2.5 shadow-xl">
+                                Remove Asset
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </TableCell>
                     </motion.tr>
@@ -408,30 +422,74 @@ export default function AssetsTab({
           </TableBody>
         </Table>
 
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 bg-muted/10 border-t border-border/40">
+        {totalCount > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-muted/10 border-t border-border/40">
             <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest">
-              Page {page} <span className="mx-1 text-border">/</span> {totalPages}
+              Showing {((page - 1) * limit) + 1} - {Math.min(page * limit, totalCount)} of {totalCount} assets
             </p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-4 text-xs font-bold gap-2 bg-background/50 hover:bg-background border-border/60 transition-all border shadow-sm cursor-pointer"
+                className="h-9 px-3 text-xs font-bold gap-2 bg-background/50 hover:bg-background border-border/60 transition-all border shadow-sm cursor-pointer disabled:opacity-50"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1 || loading}
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                <span className="hidden sm:inline">Previous</span>
               </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => {
+                  if (
+                    totalPages > 5 &&
+                    p !== 1 &&
+                    p !== totalPages &&
+                    Math.abs(p - page) > 1
+                  ) {
+                    if (p === 2 && page > 3) {
+                      return (
+                        <span key="ellipsis-start" className="text-muted-foreground px-1.5 text-xs font-bold">
+                          ...
+                        </span>
+                      );
+                    }
+                    if (p === totalPages - 1 && page < totalPages - 2) {
+                      return (
+                        <span key="ellipsis-end" className="text-muted-foreground px-1.5 text-xs font-bold">
+                          ...
+                        </span>
+                      );
+                    }
+                    return null;
+                  }
+
+                  return (
+                    <Button
+                      key={p}
+                      variant={page === p ? "default" : "outline"}
+                      size="sm"
+                      className={`h-9 w-9 text-xs font-bold transition-all border shadow-sm cursor-pointer hover:scale-105 active:scale-95 ${page === p
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background/50 hover:bg-background border-border/60"
+                        }`}
+                      onClick={() => setPage(p)}
+                      disabled={loading}
+                    >
+                      {p}
+                    </Button>
+                  );
+                })}
+              </div>
+
               <Button
                 variant="outline"
                 size="sm"
-                className="h-9 px-4 text-xs font-bold gap-2 bg-background/50 hover:bg-background border-border/60 transition-all border shadow-sm cursor-pointer"
+                className="h-9 px-3 text-xs font-bold gap-2 bg-background/50 hover:bg-background border-border/60 transition-all border shadow-sm cursor-pointer disabled:opacity-50"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages || loading}
               >
-                Next
+                <span className="hidden sm:inline">Next</span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>

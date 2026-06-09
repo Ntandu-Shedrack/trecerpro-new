@@ -24,7 +24,11 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 function getCurrentOrg(user: User | null): Organization | null {
-  return user?.current_organization ?? user?.currentOrganization ?? null;
+  return (
+    user?.current_organization ??
+    user?.currentOrganization ??
+    (user?.organizations && user.organizations.length > 0 ? user.organizations[0] : null)
+  );
 }
 
 function mapOrgRole(role?: string): "org:admin" | "org:member" {
@@ -79,10 +83,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.errors && typeof data.errors === "object") {
+          const messages = Object.values(data.errors).flat().filter(Boolean);
+          if (messages.length > 0) {
+            throw new Error(messages.join(" "));
+          }
+        }
         throw new Error(data.message || "Login failed");
       }
 
       setUser(data.user);
+
+      console.log("user", data.user)
     } finally {
       setLoading(false);
     }
@@ -107,6 +119,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.errors && typeof data.errors === "object") {
+          const messages = Object.values(data.errors).flat().filter(Boolean);
+          if (messages.length > 0) {
+            throw new Error(messages.join(" "));
+          }
+        }
         throw new Error(data.message || "Registration failed");
       }
 
@@ -200,7 +218,10 @@ export function useSession() {
     throw new Error("useSession must be used within an AuthProvider");
 
   const currentOrg = getCurrentOrg(context.user);
-  const membershipRole = mapOrgRole(currentOrg?.pivot?.role);
+  const matchedOrg = context.user?.organizations?.find(
+    (org) => String(org.id) === String(currentOrg?.id)
+  );
+  const membershipRole = mapOrgRole(matchedOrg?.pivot?.role ?? currentOrg?.pivot?.role);
 
   const hasPermission = (permission: string) => {
     if (permission === "org:sys_memberships:manage") {
@@ -235,10 +256,10 @@ export function useUser() {
     isSignedIn: !!context.user,
     user: context.user
       ? {
-          id: String(context.user.id),
-          fullName: context.user.name,
-          primaryEmailAddress: { emailAddress: context.user.email },
-        }
+        id: String(context.user.id),
+        fullName: context.user.name,
+        primaryEmailAddress: { emailAddress: context.user.email },
+      }
       : null,
   };
 }
@@ -254,19 +275,23 @@ export function useCurrentOrganization() {
     );
 
   const currentOrg = getCurrentOrg(context.user);
+  const matchedOrg = context.user?.organizations?.find(
+    (org) => String(org.id) === String(currentOrg?.id)
+  );
+  const orgRole = matchedOrg?.pivot?.role ?? currentOrg?.pivot?.role;
 
   return {
     isLoaded: !context.loading,
     organization: currentOrg
       ? {
-          id: String(currentOrg.id),
-          name: currentOrg.name,
-          slug: currentOrg.slug,
-          imageUrl: currentOrg.image_url,
-        }
+        id: String(currentOrg.id),
+        name: currentOrg.name,
+        slug: currentOrg.slug,
+        imageUrl: currentOrg.image_url,
+      }
       : null,
-    membership: currentOrg?.pivot
-      ? { role: mapOrgRole(currentOrg.pivot.role) }
+    membership: orgRole
+      ? { role: mapOrgRole(orgRole) }
       : null,
   };
 }

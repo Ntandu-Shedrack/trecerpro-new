@@ -1,6 +1,6 @@
 import { getInvitationContext } from "@/actions/organization.actions";
 import { getSession } from "@/lib/auth/session";
-import InvitationAcceptClient from "./invitation-accept-client";
+import InvitationAcceptClient from "./accept/invitation-accept-client";
 import { LogoIcon } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -10,7 +10,7 @@ interface PageProps {
   params: Promise<{ token: string }>;
 }
 
-export default async function InvitationAcceptPage({ params }: PageProps) {
+export default async function InvitationPage({ params }: PageProps) {
   const { token } = await params;
 
   // 1. Fetch invitation context

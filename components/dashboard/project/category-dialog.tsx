@@ -68,10 +68,15 @@ const TYPE_CONFIG = {
 const categorySchema = z.object({
   name: z.string().min(1, "Category name is required"),
   description: z.string().optional(),
-  attributes: z.array(attributeSchema).refine(
-    (attrs) => attrs.some((attr) => attr.name === "barcode"),
-    { message: "Barcode attribute is required" }
-  ),
+  attributes: z.array(attributeSchema)
+    .refine(
+      (attrs) => attrs.some((attr) => attr.name === "barcode"),
+      { message: "Barcode attribute is required" }
+    )
+    .refine(
+      (attrs) => attrs.some((attr) => attr.name === "status"),
+      { message: "Status attribute is required" }
+    ),
 });
 
 type CategoryFormValues = z.infer<typeof categorySchema>;
@@ -111,7 +116,14 @@ export default function CategoryDialog({
       name: "",
       description: "",
       attributes: [
-        { label: "Barcode", name: "barcode", type: "string" as const, required: true }
+        { label: "Barcode", name: "barcode", type: "string" as const, required: true },
+        { 
+          label: "Status", 
+          name: "status", 
+          type: "select" as const, 
+          required: true, 
+          options: ["In Stock", "Deployed", "Under Maintenance", "Retired"] 
+        }
       ],
     },
   });
@@ -125,9 +137,21 @@ export default function CategoryDialog({
     if (editingCategory) {
       const existingAttrs = editingCategory.attributes || [];
       const hasBarcode = existingAttrs.some(attr => attr.name === "barcode");
-      const attributes = hasBarcode
-        ? existingAttrs
-        : [{ label: "Barcode", name: "barcode", type: "string" as const, required: true }, ...existingAttrs];
+      const hasStatus = existingAttrs.some(attr => attr.name === "status");
+
+      let attributes = [...existingAttrs];
+      if (!hasBarcode) {
+        attributes = [{ label: "Barcode", name: "barcode", type: "string" as const, required: true }, ...attributes];
+      }
+      if (!hasStatus) {
+        attributes.push({ 
+          label: "Status", 
+          name: "status", 
+          type: "select" as const, 
+          required: true, 
+          options: ["In Stock", "Deployed", "Under Maintenance", "Retired"] 
+        });
+      }
 
       form.reset({
         name: editingCategory.name,
@@ -139,7 +163,14 @@ export default function CategoryDialog({
         name: "",
         description: "",
         attributes: [
-          { label: "Barcode", name: "barcode", type: "string" as const, required: true }
+          { label: "Barcode", name: "barcode", type: "string" as const, required: true },
+          { 
+            label: "Status", 
+            name: "status", 
+            type: "select" as const, 
+            required: true, 
+            options: ["In Stock", "Deployed", "Under Maintenance", "Retired"] 
+          }
         ],
       });
     }
@@ -165,8 +196,9 @@ export default function CategoryDialog({
         }
         setIsDialogOpen(false);
         onSuccess?.();
-      } catch (error: any) {
-        toast.error(error.message || "Something went wrong");
+      } catch (error: unknown) {
+        const err = error as { message?: string };
+        toast.error(err.message || "Something went wrong");
       }
     });
   };
@@ -176,7 +208,16 @@ export default function CategoryDialog({
       form.reset({
         name: "",
         description: "",
-        attributes: [],
+        attributes: [
+          { label: "Barcode", name: "barcode", type: "string" as const, required: true },
+          { 
+            label: "Status", 
+            name: "status", 
+            type: "select" as const, 
+            required: true, 
+            options: ["In Stock", "Deployed", "Under Maintenance", "Retired"] 
+          }
+        ],
       });
     }
   };
@@ -195,7 +236,7 @@ export default function CategoryDialog({
       setIsDialogOpen(open);
       if (!open) resetForm();
     }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card border border-border/80 text-foreground shadow-2xl">
+      <DialogContent className="sm:max-w-[700px] border-border/80 bg-card text-foreground overflow-hidden flex flex-col h-[85vh] sm:h-[80vh] max-h-[90vh] shadow-2xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-foreground">{editingCategory ? "Edit Category" : "New Category"}</DialogTitle>
           <DialogDescription className="text-muted-foreground">
@@ -203,15 +244,16 @@ export default function CategoryDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto py-4 pr-1 space-y-6">
           <div className="grid gap-6 p-1">
             <div className="bg-muted/10 p-4 rounded-2xl border border-border/80 space-y-4">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+              <div className="flex items-center gap-2 text-xs font-bold tracking-wider text-muted-foreground mb-1">
                 <Info className="h-3 w-3 text-muted-foreground" />
                 Basic Information
               </div>
               <Field>
-                <FieldLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category Name</FieldLabel>
+                <FieldLabel className="text-xs font-semibold tracking-wider text-muted-foreground">Category Name</FieldLabel>
                 <FieldContent>
                   <Input
                     placeholder="e.g., Servers, Networking, Workstations"
@@ -223,7 +265,7 @@ export default function CategoryDialog({
               </Field>
 
               <Field>
-                <FieldLabel className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description (Optional)</FieldLabel>
+                <FieldLabel className="text-xs font-semibold tracking-wider text-muted-foreground">Description (Optional)</FieldLabel>
                 <FieldContent>
                   <Textarea
                     placeholder="What kind of assets belong to this category?"
@@ -289,7 +331,8 @@ export default function CategoryDialog({
                       const attrType = form.watch(`attributes.${index}.type`);
                       const Config = TYPE_CONFIG[attrType as keyof typeof TYPE_CONFIG] || TYPE_CONFIG.string;
                       const Icon = Config.icon;
-                      const isBarcode = form.watch(`attributes.${index}.name`) === "barcode";
+                      const attrName = form.watch(`attributes.${index}.name`);
+                      const isMandatory = attrName === "barcode" || attrName === "status";
 
                       return (
                         <motion.div
@@ -312,10 +355,10 @@ export default function CategoryDialog({
                                   placeholder="Field label (e.g. Serial Number)"
                                   value={form.watch(`attributes.${index}.label`) || ""}
                                   onChange={(e) => handleLabelChange(index, e.target.value)}
-                                  disabled={isBarcode}
+                                  disabled={isMandatory}
                                   className={cn(
                                     "h-10 bg-muted/30 border-border/80 focus:bg-card text-foreground text-sm font-semibold",
-                                    isBarcode && "bg-muted/20 cursor-not-allowed opacity-80"
+                                    isMandatory && "bg-muted/20 cursor-not-allowed opacity-80"
                                   )}
                                 />
                               </div>
@@ -325,10 +368,10 @@ export default function CategoryDialog({
                                 <Input
                                   placeholder="Field key (e.g. serial_no)"
                                   {...form.register(`attributes.${index}.name` as const)}
-                                  disabled={isBarcode}
+                                  disabled={isMandatory}
                                   className={cn(
                                     "h-10 bg-muted/10 border-border/80 text-xs font-mono text-muted-foreground",
-                                    isBarcode && "bg-muted/20 cursor-not-allowed opacity-80"
+                                    isMandatory && "bg-muted/20 cursor-not-allowed opacity-80"
                                   )}
                                 />
                               </div>
@@ -337,15 +380,15 @@ export default function CategoryDialog({
                               <div className="md:col-span-3">
                                 <Select
                                   defaultValue={field.type}
-                                  disabled={isBarcode}
-                                  onValueChange={(value: any) =>
-                                    form.setValue(`attributes.${index}.type`, value)
+                                  disabled={isMandatory}
+                                  onValueChange={(value: string) =>
+                                    form.setValue(`attributes.${index}.type`, value as "string" | "number" | "boolean" | "date" | "select")
                                   }
                                 >
                                   <SelectTrigger
                                     className={cn(
-                                      "h-10 bg-muted/30 border-border/80 focus:ring-1 focus:ring-primary shadow-none text-foreground",
-                                      isBarcode && "bg-muted/20 cursor-not-allowed opacity-80"
+                                      "h-10 bg-muted/30 border-border/80 focus:ring-1 focus:ring-primary shadow-none text-foreground mr-auto",
+                                      isMandatory && "bg-muted/20 cursor-not-allowed opacity-80"
                                     )}
                                   >
                                     <div className="flex items-center gap-2">
@@ -371,7 +414,7 @@ export default function CategoryDialog({
                               </div>
 
                               {/* Actions & Required */}
-                              <div className="md:col-span-2 flex items-center justify-between md:justify-center gap-2">
+                              <div className="md:col-span-2 flex items-center justify-between md:justify-center gap-2 ml-auto">
                                 <div className="flex items-center gap-1.5">
                                   <Switch
                                     id={`required-${field.id}`}
@@ -379,10 +422,10 @@ export default function CategoryDialog({
                                     onCheckedChange={(checked) =>
                                       form.setValue(`attributes.${index}.required`, checked)
                                     }
-                                    disabled={isBarcode}
+                                    disabled={isMandatory}
                                     className="scale-90 data-[state=checked]:bg-primary"
                                   />
-                                  <Label htmlFor={`required-${field.id}`} className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground cursor-pointer whitespace-nowrap">
+                                  <Label htmlFor={`required-${field.id}`} className="text-[9px] font-bold tracking-wider text-muted-foreground cursor-pointer whitespace-nowrap">
                                     Req
                                   </Label>
                                 </div>
@@ -393,9 +436,9 @@ export default function CategoryDialog({
                                   size="icon"
                                   className={cn(
                                     "h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer",
-                                    isBarcode && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground"
+                                    isMandatory && "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-muted-foreground"
                                   )}
-                                  disabled={isBarcode}
+                                  disabled={isMandatory}
                                   onClick={() => remove(index)}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -407,7 +450,7 @@ export default function CategoryDialog({
                           {/* Options config for select type */}
                           {attrType === "select" && (
                             <div className="pl-9 pr-2 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
-                              <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                              <Label className="text-[10px] font-bold tracking-wider text-muted-foreground">
                                 Dropdown Options (comma-separated list)
                               </Label>
                               <Input
@@ -432,21 +475,22 @@ export default function CategoryDialog({
               </div>
             </div>
           </div>
+        </div>
 
-          <DialogFooter className="pt-6 gap-2 border-t border-border/60 mt-4">
+      <DialogFooter className="pt-6 gap-2 border-t border-border/60 mt-4 shrink-0">
             <Button
               type="button"
               variant="ghost"
               onClick={() => setIsDialogOpen(false)}
               disabled={isPending}
-              className="font-bold text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground cursor-pointer"
+              className="font-bold text-xs mr-auto tracking-wider text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="min-w-[140px] font-bold text-xs uppercase tracking-wider shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:bg-primary/95 border-none cursor-pointer"
+              className="min-w-[140px] font-bold text-xs tracking-wider shadow-lg shadow-primary/20 bg-primary text-primary-foreground hover:bg-primary/95 border-none cursor-pointer"
             >
               {isPending ? (
                 <div className="flex items-center gap-2">

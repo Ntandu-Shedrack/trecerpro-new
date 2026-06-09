@@ -17,21 +17,13 @@ export async function logActivity(_input: ActivityInput) {
   return { success: true };
 }
 
-export async function getProjectActivities(
-  projectId: string,
-  page: number = 1,
-  limit: number = 10
-) {
+export async function getProjectActivities(projectId: string) {
   try {
-    const response = await api.get(`/api/projects/${projectId}/activities`, {
-      params: { page, limit },
-    });
+    const response = await api.get(`/api/projects/${projectId}/activities`);
 
     return {
       data: response.data.data as Activity[],
-      count: response.data.totalPages * limit,
-      totalPages: response.data.totalPages || 0,
-      currentPage: page,
+      count: response.data.data?.length || 0,
       error: null,
     };
   } catch (error: unknown) {
@@ -43,8 +35,6 @@ export async function getProjectActivities(
     return {
       data: [] as Activity[],
       count: 0,
-      totalPages: 0,
-      currentPage: page,
       error: err.response?.data?.message || err.message,
     };
   }

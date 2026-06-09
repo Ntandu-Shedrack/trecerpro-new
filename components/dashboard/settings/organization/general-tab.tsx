@@ -176,6 +176,7 @@ export default function GeneralTab() {
         </CardContent>
         <CardFooter className="border-t pt-4 justify-end gap-2">
           <Button
+            className="mr-auto"
             variant="ghost"
             size="sm"
             disabled={!isDirty || saving}

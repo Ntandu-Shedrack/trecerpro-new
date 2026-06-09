@@ -28,8 +28,9 @@ export async function POST(request: NextRequest) {
     const parsed = await parseLaravelJson<Record<string, unknown>>(laravelRes);
 
     if (!parsed.ok) {
+      console.error("[auth/register] Laravel registration failed:", parsed);
       return NextResponse.json(
-        { message: parsed.message },
+        { message: parsed.message, errors: parsed.data.errors },
         { status: clientStatusForLaravelError(parsed) }
       );
     }

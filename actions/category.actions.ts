@@ -10,7 +10,10 @@ import type { Attribute, AttributeType, Category } from "@/types";
 export async function getCategories(projectId: string) {
   try {
     const response = await api.get(`/api/projects/${projectId}/categories`);
-    return { data: response.data as Category[], error: null };
+    const data = Array.isArray(response.data)
+      ? response.data
+      : (Array.isArray(response.data?.data) ? response.data.data : []);
+    return { data: data as Category[], error: null };
   } catch (error: any) {
     console.error("Error fetching categories from Laravel API:", error);
     return { data: [], error: error.response?.data?.message || error.message };

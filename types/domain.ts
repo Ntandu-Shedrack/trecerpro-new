@@ -133,11 +133,14 @@ export interface DashboardStats {
   projectCount: number;
   categoryCount: number;
   assetCount: number;
+  monthlyGrowth: number;
 }
 
 export interface DashboardSummary {
   stats: DashboardStats;
   chartData: { name: string; total: number }[];
+  categoryDistribution?: { name: string; units: number }[];
+  lifecycleDistribution?: { name: string; value: number }[];
   activities: Activity[];
   members: OrgMember[];
 }

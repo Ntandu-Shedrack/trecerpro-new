@@ -189,7 +189,7 @@ export default function AssetDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px] border-border/60 bg-card/95 backdrop-blur-md text-foreground overflow-hidden flex flex-col p-0 h-[85vh] sm:h-auto sm:max-h-[90vh] shadow-2xl rounded-2xl">
+      <DialogContent className="sm:max-w-[700px] border-border/60 bg-card/95 backdrop-blur-md text-foreground overflow-hidden flex flex-col p-0 h-[85vh] sm:h-[80vh] max-h-[90vh] shadow-2xl rounded-2xl">
         <div className="p-8 pb-0">
           <DialogHeader className="mb-6">
             <div className="flex items-center gap-4">
@@ -213,7 +213,7 @@ export default function AssetDialog({
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full overflow-hidden">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 overflow-hidden">
             <div className="flex-1 overflow-y-auto px-8 py-2 space-y-8">
               
               {/* Category selector row */}
@@ -379,7 +379,7 @@ export default function AssetDialog({
             </div>
 
             <div className="p-8 pt-4">
-              <DialogFooter className="gap-4 pt-6 border-t border-border/60">
+              <DialogFooter className="gap-4 pt-6 border-t border-border/60 shrink-0">
                 <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} disabled={loading} className="px-6 mr-auto font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer rounded-xl h-11">
                   Close
                 </Button>

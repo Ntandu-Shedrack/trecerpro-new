@@ -73,22 +73,22 @@ export default function ProfilePage() {
 
       {/* Styled Dashboard Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="flex w-full overflow-x-auto justify-start border-b border-border bg-transparent p-0 h-auto gap-6 rounded-none">
+        <TabsList className="flex w-full justify-start border-b border-border bg-transparent p-0 h-auto gap-6 rounded-none">
           <TabsTrigger
             value="general"
-            className="pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-1 font-semibold transition-all duration-200"
+            className="px-4 py-1.5 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-1 font-semibold transition-all duration-200"
           >
             General & Security
           </TabsTrigger>
           <TabsTrigger
             value="sessions"
-            className="pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-1 font-semibold transition-all duration-200"
+            className="px-4 py-1.5 rounded-lg border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary px-1 font-semibold transition-all duration-200"
           >
             Sessions
           </TabsTrigger>
           <TabsTrigger
             value="danger"
-            className="pb-3 rounded-none border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:bg-transparent data-[state=active]:text-destructive px-1 font-semibold transition-all duration-200"
+            className="px-4 py-1.5 rounded-lg border-b-2 border-transparent data-[state=active]:border-destructive data-[state=active]:bg-transparent data-[state=active]:text-destructive px-1 font-semibold transition-all duration-200"
           >
             Danger Zone
           </TabsTrigger>

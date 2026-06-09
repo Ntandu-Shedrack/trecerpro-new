@@ -145,7 +145,7 @@ export default function DangerZoneTab() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="mr-auto">Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleLeave}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
@@ -190,7 +190,7 @@ export default function DangerZoneTab() {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel className="mr-auto">Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDelete}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
