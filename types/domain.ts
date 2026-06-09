@@ -139,7 +139,7 @@ export interface DashboardStats {
 export interface DashboardSummary {
   stats: DashboardStats;
   chartData: { name: string; total: number }[];
-  categoryDistribution?: { name: string; units: number }[];
+  categoryDistribution?: { name: string; units: number; active?: number }[];
   lifecycleDistribution?: { name: string; value: number }[];
   activities: Activity[];
   members: OrgMember[];

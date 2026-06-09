@@ -9,8 +9,8 @@ import {
   Cell,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid
@@ -18,7 +18,7 @@ import {
 
 interface DashboardInsightsProps {
   chartData: { name: string; total: number }[];
-  categoryDistribution: { name: string; units: number }[];
+  categoryDistribution: { name: string; units: number; active?: number }[];
   lifecycleDistribution: { name: string; value: number }[];
 }
 
@@ -26,7 +26,7 @@ export function DashboardInsights({
   categoryDistribution,
   lifecycleDistribution
 }: DashboardInsightsProps) {
-  // Standard color palette for category distribution line chart
+  // Standard color palette for category distribution area chart
   const primaryColor = "hsl(var(--primary))";
 
   // Map lifecycle statuses to harmonious semantic colors
@@ -45,7 +45,7 @@ export function DashboardInsights({
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-4">
-      {/* Left: Asset Distribution (Line Chart) */}
+      {/* Left: Asset Distribution (Area Chart matching requested styling) */}
       <Card className="border-border bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-primary/20">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-8">
@@ -74,7 +74,17 @@ export function DashboardInsights({
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={categoryDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={categoryDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorUnits" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid
                     strokeDasharray="4 4"
                     vertical={false}
@@ -107,19 +117,33 @@ export function DashboardInsights({
                     }}
                     formatter={(value: any, name: any) => {
                       const v = typeof value === "number" ? value : Number(value ?? 0);
-                      return [v.toLocaleString(), "Units"] as [string, string];
+                      const seriesName = name === "units" ? "Total Units" : "Active Units";
+                      return [v.toLocaleString(), seriesName] as [string, string];
                     }}
                   />
-                  <Line
+                  <Area
                     type="monotone"
                     dataKey="units"
                     stroke={primaryColor}
-                    strokeWidth={3}
-                    dot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: primaryColor }}
-                    activeDot={{ r: 6, stroke: "var(--card)", strokeWidth: 2, fill: primaryColor }}
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorUnits)"
+                    dot={false}
+                    activeDot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: primaryColor }}
                     animationDuration={1500}
                   />
-                </LineChart>
+                  <Area
+                    type="monotone"
+                    dataKey="active"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorActive)"
+                    dot={false}
+                    activeDot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: "#10B981" }}
+                    animationDuration={1500}
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </div>
