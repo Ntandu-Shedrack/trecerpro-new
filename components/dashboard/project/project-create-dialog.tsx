@@ -1,21 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { Plus } from "lucide-react";
+import { Plus, FolderPlus, HelpCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
 
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,6 +24,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,17 +42,19 @@ const formSchema = z.object({
     .min(1, "Project name is required")
     .max(255, "Project name must not exceed 255 characters"),
   description: z.string().optional(),
-  status: z.enum(["draft", "active", "suspended", "archived"]),
+  status: z.enum(["active", "on-hold", "completed"]),
 });
 
 interface ProjectCreateDialogProps {
   organizationId: string;
   trigger?: React.ReactNode;
+  onSuccess?: () => void;
 }
 
 export function ProjectCreateDialog({
   organizationId,
   trigger,
+  onSuccess,
 }: ProjectCreateDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -95,6 +98,7 @@ export function ProjectCreateDialog({
       } else {
         toast.success("Project created successfully");
         setOpen(false);
+        onSuccess?.();
       }
     } catch (error) {
       console.error("Failed to create project:", error);
@@ -105,85 +109,111 @@ export function ProjectCreateDialog({
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" size="sm" className="h-8 gap-1">
-            <Plus className="h-4 w-4" />
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 transition-all duration-200 hover:bg-muted border-border text-foreground hover:text-foreground">
+            <Plus className="h-4 w-4 text-primary" />
             New Project
           </Button>
         )}
-      </SheetTrigger>
-      <SheetContent className="w-full sm:max-w-[480px] bg-slate-950 border-l border-slate-800 text-foreground overflow-y-auto">
-        <SheetHeader className="pb-6 border-b border-slate-800">
-          <SheetTitle className="text-xl font-bold text-white">Create Project</SheetTitle>
-          <SheetDescription className="text-slate-400">
-            Initialize a new project workspace. Define your asset monitoring scopes.
-          </SheetDescription>
-        </SheetHeader>
+      </DialogTrigger>
+      <DialogContent className="w-full sm:max-w-[500px] border-border/60 bg-card text-foreground p-0 overflow-hidden shadow-2xl rounded-2xl">
+        <DialogHeader className="p-6 pb-4 border-b border-border/60 bg-gradient-to-b from-primary/5 to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 text-primary">
+              <FolderPlus className="h-5 w-5" />
+            </div>
+            <div className="space-y-0.5 text-left">
+              <DialogTitle className="text-2xl font-extrabold tracking-tight text-foreground">Create Project</DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground font-medium">
+                Initialize a new project workspace. Define your asset monitoring scopes.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5 p-6 pb-2">
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-slate-300 font-bold uppercase tracking-wider text-xs">Project Name</FormLabel>
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-muted-foreground font-bold tracking-wider text-[11px] uppercase">Project Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="E.g. Security Audit 2026" className="bg-slate-900 border-slate-800 focus:bg-slate-950" {...field} />
+                    <Input
+                      placeholder="E.g. Security Audit 2026"
+                      className="bg-muted/30 border-border/80 focus:bg-card focus:border-primary/50 focus:ring-2 focus:ring-primary/20 font-medium text-sm text-foreground rounded-xl transition-all shadow-inner placeholder:text-muted-foreground/60"
+                      {...field}
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-rose-500" />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-slate-300 font-bold uppercase tracking-wider text-xs">Description (Optional)</FormLabel>
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-muted-foreground font-bold tracking-wider text-[11px] uppercase">Description (Optional)</FormLabel>
                   <FormControl>
-                    <Textarea 
+                    <Textarea
                       placeholder="Define the scope, objectives, or physical locations..."
-                      className="resize-none h-28 bg-slate-900 border-slate-800 focus:bg-slate-950"
-                      {...field} 
+                      className="resize-none h-24 bg-muted/30 border-border/80 focus:bg-card focus:border-primary/50 focus:ring-2 focus:ring-primary/20 font-medium text-sm text-foreground rounded-xl transition-all shadow-inner placeholder:text-muted-foreground/60"
+                      {...field}
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-rose-500" />
                 </FormItem>
               )}
             />
+
             <FormField
               control={form.control}
               name="status"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-slate-300 font-bold uppercase tracking-wider text-xs">Status</FormLabel>
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-muted-foreground font-bold tracking-wider text-[11px] uppercase">Initial Status</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
-                      <SelectTrigger className="bg-slate-900 border-slate-800 focus:bg-slate-950 capitalize">
+                      <SelectTrigger className="w-full bg-muted/30 border-border/80 focus:bg-card focus:ring-2 focus:ring-primary/20 h-11 text-sm font-semibold text-foreground shadow-inner rounded-xl transition-all capitalize">
                         <SelectValue placeholder="Select a project status" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent className="bg-slate-950 border-slate-800 text-foreground">
-                      <SelectItem value="active" className="cursor-pointer capitalize">Active</SelectItem>
-                      <SelectItem value="draft" className="cursor-pointer capitalize">Draft</SelectItem>
-                      <SelectItem value="suspended" className="cursor-pointer capitalize">Suspended</SelectItem>
-                      <SelectItem value="archived" className="cursor-pointer capitalize">Archived</SelectItem>
+                    <SelectContent className="bg-card border-border text-foreground rounded-xl shadow-xl">
+                      <SelectItem value="active" className="cursor-pointer capitalize font-medium p-3 text-left rounded-lg m-1 focus:bg-primary/10 focus:text-primary">Active</SelectItem>
+                      <SelectItem value="on-hold" className="cursor-pointer capitalize font-medium p-3 text-left rounded-lg m-1 focus:bg-amber-500/10 focus:text-amber-500">On hold</SelectItem>
+                      <SelectItem value="completed" className="cursor-pointer capitalize font-medium p-3 text-left rounded-lg m-1 focus:bg-muted focus:text-foreground">Completed</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormMessage />
+                  <FormMessage className="text-xs text-rose-500" />
                 </FormItem>
               )}
             />
-            <SheetFooter className="pt-6 border-t border-slate-800">
-              <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto min-w-[140px] shadow-lg shadow-primary/20">
+
+            <DialogFooter className="pt-4 border-t border-border/60 flex items-center justify-end gap-4 bg-card p-6 rounded-b-2xl">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setOpen(false)}
+                className="px-6 mr-auto font-bold text-muted-foreground hover:text-foreground transition-all cursor-pointer rounded-xl h-11"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-10 h-11 font-black tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/95 border-none rounded-xl"
+              >
                 {isSubmitting ? "Creating..." : "Create Project"}
               </Button>
-            </SheetFooter>
+            </DialogFooter>
           </form>
         </Form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
