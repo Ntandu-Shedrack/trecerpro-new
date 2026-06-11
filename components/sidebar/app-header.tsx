@@ -25,7 +25,7 @@ export function AppHeader() {
           dashboard: "Dashboard",
           users: "Users",
           settings: "Settings",
-          notifcations: "Notifications",
+          notifications: "Notifications",
         }}
       />
 
@@ -43,7 +43,7 @@ export function AppHeader() {
 
       {/* Notifications */}
 
-      <Link href="/dashboard/notifcations" passHref legacyBehavior>
+      <Link href="/dashboard/notifications" passHref legacyBehavior>
         <Button variant="ghost" size="icon" className="relative cursor-pointer">
           <Bell className="h-5 w-5" />
 

@@ -105,7 +105,7 @@ export function NavUser() {
               </DropdownMenuItem>
 
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/notifcations" className="flex w-full items-center cursor-pointer">
+                <Link href="/dashboard/notifications" className="flex w-full items-center cursor-pointer">
                   <Bell className="mr-2 h-4 w-4" />
                   Notifications
                 </Link>
