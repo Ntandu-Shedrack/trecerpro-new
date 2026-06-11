@@ -1,150 +1,132 @@
 "use client";
 
-import { NotificationItem } from "./mock-data";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SystemNotification } from "@/actions/notification.actions";
 import {
-  CheckCircle,
-  Circle,
-  ShieldAlert,
-  Sparkles,
-  User,
-  Settings,
-  Trash2,
-  Calendar,
+  Bell,
+  AlertTriangle,
+  Users,
+  HardDrive,
+  Check,
+  Eye,
+  Trash2
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
-interface ItemProps {
-  notification: NotificationItem;
-  onToggleRead: (id: string) => void;
+interface NotificationItemProps {
+  notification: SystemNotification;
+  onMarkRead: (id: string) => void;
   onDelete: (id: string) => void;
-  onSelect: (item: NotificationItem) => void;
+  onViewDetails: (notification: SystemNotification) => void;
 }
 
-export function NotificationItemCard({
+export function NotificationItem({
   notification,
-  onToggleRead,
+  onMarkRead,
   onDelete,
-  onSelect,
-}: ItemProps) {
-  // Relative date formatter
-  const getRelativeTime = (isoString: string) => {
-    const diffMs = Date.now() - new Date(isoString).getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHrs = Math.floor(diffMins / 60);
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    const diffDays = Math.floor(diffHrs / 24);
-    return `${diffDays}d ago`;
-  };
-
-  // Icon setup
-  const getIconConfig = () => {
-    const base = "h-4 w-4";
+  onViewDetails
+}: NotificationItemProps) {
+  // Select Icon
+  const getIcon = () => {
     switch (notification.type) {
       case "security":
-        return {
-          element: <ShieldAlert className={base} />,
-          bg: "bg-red-500/10 text-red-500 border border-red-500/20",
-        };
+        return <AlertTriangle className="h-4 w-4" />;
       case "organization":
-        return {
-          element: <User className={base} />,
-          bg: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20",
-        };
-      case "assets":
-        return {
-          element: <Sparkles className={base} />,
-          bg: "bg-blue-500/10 text-blue-500 border border-blue-500/20",
-        };
+        return <Users className="h-4 w-4" />;
+      case "asset":
+        return <HardDrive className="h-4 w-4" />;
       default:
-        return {
-          element: <Settings className={base} />,
-          bg: "bg-purple-500/10 text-purple-500 border border-purple-500/20",
-        };
+        return <Bell className="h-4 w-4" />;
     }
   };
 
-  const icon = getIconConfig();
+  // Map Colors
+  const getColorStyles = () => {
+    if (notification.priority === "critical") {
+      return {
+        bg: "bg-red-500/10",
+        text: "text-red-600 dark:text-red-400",
+        border: "border-red-500/20"
+      };
+    }
+    if (notification.priority === "warning") {
+      return {
+        bg: "bg-amber-500/10",
+        text: "text-amber-600 dark:text-amber-400",
+        border: "border-amber-500/20"
+      };
+    }
+    return {
+      bg: "bg-blue-500/10",
+      text: "text-blue-600 dark:text-blue-400",
+      border: "border-blue-500/20"
+    };
+  };
+
+  const colors = getColorStyles();
 
   return (
-    <Card
-      onClick={() => onSelect(notification)}
-      className={`group relative border-border/60 overflow-hidden cursor-pointer transition-all duration-300 hover:bg-muted/40 hover:border-primary/20 ${
-        notification.isRead ? "bg-card/20 opacity-75" : "bg-card/85 shadow-xs border-l-4 border-l-primary"
+    <div
+      className={`group relative flex items-start justify-between gap-4 p-4 border border-border/50 bg-card/45 hover:bg-card/90 transition-all duration-300 rounded-lg shadow-xs ${
+        !notification.read ? "border-l-4 border-l-primary" : ""
       }`}
     >
-      <CardContent className="p-4 flex gap-4">
-        {/* Icon Badge */}
-        <div className="flex-shrink-0 mt-0.5">
-          <div className={`p-2.5 rounded-lg ${icon.bg}`}>
-            {icon.element}
-          </div>
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div
+          className={`size-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ring-1 ring-border/20 ${colors.bg} ${colors.text}`}
+        >
+          {getIcon()}
         </div>
 
-        {/* Center Details */}
-        <div className="flex-1 min-w-0 pr-8">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className={`text-sm truncate text-foreground ${notification.isRead ? "font-medium" : "font-semibold"}`}>
+            <span className={`font-semibold text-sm truncate ${!notification.read ? "text-foreground font-bold" : "text-muted-foreground"}`}>
               {notification.title}
-            </h4>
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full capitalize font-semibold ${
-              notification.priority === "critical"
-                ? "bg-red-500/15 text-red-500 border border-red-500/10"
-                : notification.priority === "warning"
-                ? "bg-amber-500/15 text-amber-500 border border-amber-500/10"
-                : "bg-blue-500/15 text-blue-500 border border-blue-500/10"
-            }`}>
-              {notification.priority}
             </span>
+            {!notification.read && (
+              <span className="h-2 w-2 rounded-full bg-primary shrink-0 animate-pulse" />
+            )}
           </div>
-
-          <p
-            className="text-xs text-muted-foreground/90 mt-1 line-clamp-2 leading-relaxed"
-            dangerouslySetInnerHTML={{
-              __html: notification.description.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"),
-            }}
-          />
-
-          <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {getRelativeTime(notification.created_at)}
-            </span>
-            <span>•</span>
-            <span className="uppercase tracking-wider">{notification.type}</span>
-          </div>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+            {notification.description}
+          </p>
+          <span className="text-[10px] text-muted-foreground/80 mt-2 block">
+            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+          </span>
         </div>
+      </div>
 
-        {/* Action Column on hover */}
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-background/95 border border-border/40 p-1 rounded-lg shadow-md z-10">
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onViewDetails(notification)}
+          className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+          title="View Details"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+        {!notification.read && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
-            title={notification.isRead ? "Mark as unread" : "Mark as read"}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleRead(notification.id);
-            }}
+            onClick={() => onMarkRead(notification.id)}
+            className="h-7 w-7 text-muted-foreground hover:text-emerald-500 cursor-pointer"
+            title="Mark as Read"
           >
-            {notification.isRead ? <Circle className="h-3.5 w-3.5" /> : <CheckCircle className="h-3.5 w-3.5" />}
+            <Check className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-            title="Delete Notification"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(notification.id);
-            }}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(notification.id)}
+          className="h-7 w-7 text-muted-foreground hover:text-red-500 cursor-pointer"
+          title="Delete Notification"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }
