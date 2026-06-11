@@ -44,12 +44,14 @@ export function AppHeader() {
       {/* Notifications */}
 
       <Link href="/dashboard/notifications" passHref legacyBehavior>
-        <Button variant="ghost" size="icon" className="relative cursor-pointer">
-          <Bell className="h-5 w-5" />
+        <Button asChild variant="ghost" size="icon" className="relative cursor-pointer">
+          <a>
+            <Bell className="h-5 w-5" />
 
-          {/* Notification Badge */}
+            {/* Notification Badge */}
 
-          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
+            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
+          </a>
         </Button>
       </Link>
     </header>
