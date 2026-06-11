@@ -1,959 +1,929 @@
-# Notifications Page Implementation Plan
+# Notification Page Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement an interactive and aesthetically premium Notifications page with modular components for monitoring organization activities and critical system alerts.
+**Goal:** Implement a feature-rich and visually premium Notification Page accessed via the dashboard header and user-nav, showing organization updates, audit results, and system events.
 
-**Architecture:** The page is structured into modular components: Header (stats summary), Filters (search, tab, priority), Items (cards), Details (Radix/shadcn Dialog for deep audits), and a central Orchestrator (List). State is stored in LocalStorage for client-side persistence and interactivity.
+**Architecture:** It uses Next.js Server Actions to interface with Laravel's backend API. If the backend endpoints are unconfigured, it seamlessly falls back to a Client state persistent layer stored in `localStorage` containing realistic pre-seeded data.
 
-**Tech Stack:** Next.js (TSX), Tailwind CSS, Lucide React, Shadcn/UI components (Card, Button, Input, DropdownMenu, Dialog, Avatar).
+**Tech Stack:** React 19, Next.js 16 (App Router), Radix UI (Dialog), Lucide Icons, Tailwind CSS v4, Sonner.
 
 ---
 
-### Task 1: Create Mock Data and Interfaces
+### Task 1: Create Server Actions
+
+**Files:**
+- Create: `actions/notification.actions.ts`
+
+- [ ] **Step 1: Write the Server Actions with simulated backend integration and mock responses**
+
+Create [notification.actions.ts](file:///Users/mbp/Desktop/Code/tracerpro-new/actions/notification.actions.ts):
+```typescript
+"use server";
+
+import api from "@/lib/api";
+import { Activity } from "@/types";
+
+export interface SystemNotification {
+  id: string;
+  title: string;
+  description: string;
+  type: "system" | "security" | "organization" | "asset";
+  priority: "info" | "warning" | "critical";
+  read: boolean;
+  created_at: string;
+  link?: string;
+  changes?: {
+    before?: Record<string, unknown>;
+    after?: Record<string, unknown>;
+  };
+}
+
+export async function getNotifications(): Promise<{
+  data: SystemNotification[];
+  error: string | null;
+}> {
+  try {
+    const response = await api.get("/api/notifications");
+    return { data: response.data.data as SystemNotification[], error: null };
+  } catch (error: any) {
+    console.warn("Laravel notifications endpoint failed or is not implemented yet. Falling back to local storage.", error.message);
+    return { data: [], error: "fallback_needed" };
+  }
+}
+
+export async function markAsRead(id: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    await api.post(`/api/notifications/${id}/read`);
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function markAllAsRead(): Promise<{ success: boolean; error: string | null }> {
+  try {
+    await api.post(`/api/notifications/read-all`);
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+export async function deleteNotification(id: string): Promise<{ success: boolean; error: string | null }> {
+  try {
+    await api.delete(`/api/notifications/${id}`);
+    return { success: true, error: null };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+```
+
+- [ ] **Step 2: Commit Task 1**
+
+Run:
+```bash
+git add actions/notification.actions.ts
+git commit -m "feat: add notification server actions with fallback detection"
+```
+
+---
+
+### Task 2: Create Mock Data File
 
 **Files:**
 - Create: `components/dashboard/notifications/mock-data.ts`
 
-- [ ] **Step 1: Write the mock data and types**
-  Write the mock data and typescript interface in `components/dashboard/notifications/mock-data.ts`.
-  ```typescript
-  export interface NotificationItem {
-    id: string;
-    type: "assets" | "security" | "organization" | "system";
-    action: string;
-    title: string;
-    description: string;
-    priority: "info" | "warning" | "critical";
-    isRead: boolean;
-    isArchived: boolean;
-    created_at: string;
-    user_name?: string;
-    entity_name?: string;
-    entity_type?: string;
-    entity_id?: string;
-    changes?: {
-      before?: Record<string, string | number | boolean>;
-      after?: Record<string, string | number | boolean>;
-    };
-    causer?: {
-      name: string;
-      email: string;
-      avatar?: string;
-    };
-  }
+- [ ] **Step 1: Write high-fidelity notification mock items for fallback mode**
 
-  export const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-    {
-      id: "ntf-1",
-      type: "security",
-      action: "failed_scan",
-      title: "Unauthorized Scan Attempt",
-      description: "An unauthorized device attempted to scan asset **MBP-2026-004** in NYC Cluster.",
-      priority: "critical",
-      isRead: false,
-      isArchived: false,
-      created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
-      entity_type: "asset",
-      entity_id: "MBP-2026-004",
-      entity_name: "MacBook Pro 16\"",
-      causer: {
-        name: "Unknown Device (IP: 192.168.1.144)",
-        email: "security-alert@tracerpro.com"
-      }
-    },
-    {
-      id: "ntf-2",
-      type: "organization",
-      action: "member_joined",
-      title: "New Team Member Joined",
-      description: "**Deborah Carter** accepted the invitation to join the organization as **Developer**.",
-      priority: "info",
-      isRead: false,
-      isArchived: false,
-      created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(), // 2 hours ago
-      entity_type: "member",
-      entity_name: "Deborah Carter",
-      causer: {
-        name: "Deborah Carter",
-        email: "deborah@tracerpro.com",
-        avatar: "DC"
-      }
-    },
-    {
-      id: "ntf-3",
-      type: "assets",
-      action: "batch_updated",
-      title: "Batch Asset Update Success",
-      description: "Successfully updated status to **In Service** for 24 server units in project **NYC-01**.",
-      priority: "info",
-      isRead: true,
-      isArchived: false,
-      created_at: new Date(Date.now() - 1000 * 60 * 600).toISOString(), // 10 hours ago
-      entity_type: "project",
-      entity_id: "prj-nyc-01",
-      entity_name: "NYC-01 Data Center Cluster",
-      changes: {
-        before: { status: "Provisioning", count: 24 },
-        after: { status: "In Service", count: 24 }
-      },
-      causer: {
-        name: "Marcus Aurelius",
-        email: "marcus@tracerpro.com",
-        avatar: "MA"
-      }
-    },
-    {
-      id: "ntf-4",
-      type: "system",
-      action: "billing_limit",
-      title: "Subscription Warning: Limit Approaching",
-      description: "Organization has reached **85%** of the allocated scan limits under the current Pro Plan.",
-      priority: "warning",
-      isRead: false,
-      isArchived: false,
-      created_at: new Date(Date.now() - 1000 * 60 * 1440).toISOString(), // 1 day ago
-      entity_type: "billing",
-      causer: {
-        name: "TracerPro System",
-        email: "billing@tracerpro.com"
-      }
-    },
-    {
-      id: "ntf-5",
-      type: "assets",
-      action: "asset_retired",
-      title: "Asset Retired from Inventory",
-      description: "Asset **SRV-DELL-909** was set to status **Retired** due to hardware failure.",
-      priority: "warning",
-      isRead: true,
-      isArchived: false,
-      created_at: new Date(Date.now() - 1000 * 60 * 2880).toISOString(), // 2 days ago
-      entity_type: "asset",
-      entity_id: "SRV-DELL-909",
-      entity_name: "Dell PowerEdge R750",
-      changes: {
-        before: { status: "Maintenance", health: "Warning" },
-        after: { status: "Retired", health: "Critical Failure" }
-      },
-      causer: {
-        name: "Sarah Jenkins",
-        email: "sarah@tracerpro.com",
-        avatar: "SJ"
-      }
+Create [mock-data.ts](file:///Users/mbp/Desktop/Code/tracerpro-new/components/dashboard/notifications/mock-data.ts):
+```typescript
+import { SystemNotification } from "@/actions/notification.actions";
+
+export const INITIAL_MOCK_NOTIFICATIONS: SystemNotification[] = [
+  {
+    id: "notif-1",
+    title: "Critical Security Alert",
+    description: "An unidentified mobile client attempted a restricted barcode scan from IP 192.168.1.105.",
+    type: "security",
+    priority: "critical",
+    read: false,
+    created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
+  },
+  {
+    id: "notif-2",
+    title: "New Batch Upload Completed",
+    description: "240 new devices successfully uploaded and verified in the NYC-01 Server Cluster.",
+    type: "system",
+    priority: "info",
+    read: false,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
+    link: "/dashboard/operations",
+  },
+  {
+    id: "notif-3",
+    title: "Project Audit Warning",
+    description: "EMEA Quarterly Audit has 12 items flagged as 'missing' or 'needs verification'.",
+    type: "asset",
+    priority: "warning",
+    read: false,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
+  },
+  {
+    id: "notif-4",
+    title: "Organization Invitation Accepted",
+    description: "Sarah Jenkins (s.jenkins@tracerpro.com) has joined the organization as a Manager.",
+    type: "organization",
+    priority: "info",
+    read: true,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+  },
+  {
+    id: "notif-5",
+    title: "Asset Status Updated",
+    description: "MacBook Pro M2 (TRC-8902) was changed from 'active' to 'maintenance'.",
+    type: "asset",
+    priority: "info",
+    read: true,
+    created_at: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(), // 30 hours ago
+    changes: {
+      before: { status: "active", location: "HQ - Floor 3" },
+      after: { status: "maintenance", location: "IT Lab" }
     }
-  ];
-  ```
+  }
+];
+```
 
-- [ ] **Step 2: Commit changes**
-  ```bash
-  git add components/dashboard/notifications/mock-data.ts
-  git commit -m "feat(notifications): add mock data and types"
-  ```
+- [ ] **Step 2: Commit Task 2**
+
+Run:
+```bash
+git add components/dashboard/notifications/mock-data.ts
+git commit -m "feat: add high-fidelity mock notifications data"
+```
 
 ---
 
-### Task 2: Implement Header, Filter and Details Components
+### Task 3: Create Notifications Header Component
 
 **Files:**
 - Create: `components/dashboard/notifications/notifications-header.tsx`
-- Create: `components/dashboard/notifications/notifications-filter.tsx`
-- Create: `components/dashboard/notifications/notification-details-dialog.tsx`
 
-- [ ] **Step 1: Create notifications-header.tsx**
-  Implement the header component with stats indicators and bulk triggers.
-  ```tsx
-  "use client";
+- [ ] **Step 1: Write header rendering total stats and actions**
 
-  import { Card, CardContent } from "@/components/ui/card";
-  import { Button } from "@/components/ui/button";
-  import { Bell, Eye, Trash2 } from "lucide-react";
-  import { NotificationItem } from "./mock-data";
+Create [notifications-header.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/components/dashboard/notifications/notifications-header.tsx):
+```typescript
+"use client";
 
-  interface HeaderProps {
-    notifications: NotificationItem[];
-    onMarkAllAsRead: () => void;
-    onClearAllRead: () => void;
-  }
+import { Button } from "@/components/ui/button";
+import { CheckCheck, Trash2 } from "lucide-react";
 
-  export function NotificationsHeader({
-    notifications,
-    onMarkAllAsRead,
-    onClearAllRead,
-  }: HeaderProps) {
-    const total = notifications.length;
-    const unread = notifications.filter((n) => !n.isRead).length;
-    const critical = notifications.filter((n) => n.priority === "critical" && !n.isRead).length;
+interface NotificationsHeaderProps {
+  unreadCount: number;
+  totalCount: number;
+  onMarkAllRead: () => void;
+  onClearAll: () => void;
+}
 
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Notifications</h1>
-            <p className="text-sm text-muted-foreground">
-              Monitor updates, team activity, and critical events in your organization.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onMarkAllAsRead}
-              disabled={unread === 0}
-              className="flex items-center gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Mark all read
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClearAllRead}
-              disabled={notifications.filter((n) => n.isRead).length === 0}
-              className="flex items-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="h-4 w-4" />
-              Clear read
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-card/40 backdrop-blur-xs border-border">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Total Events</p>
-                <h3 className="text-2xl font-bold text-foreground mt-1">{total}</h3>
-              </div>
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <Bell className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/40 backdrop-blur-xs border-border">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Unread Messages</p>
-                <h3 className="text-2xl font-bold text-foreground mt-1">{unread}</h3>
-              </div>
-              <div className={`p-2 rounded-lg ${unread > 0 ? "bg-amber-500/10 text-amber-500" : "bg-muted text-muted-foreground"}`}>
-                <Bell className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card/40 backdrop-blur-xs border-border">
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Active Critical Alerts</p>
-                <h3 className="text-2xl font-bold text-foreground mt-1">{critical}</h3>
-              </div>
-              <div className={`p-2 rounded-lg ${critical > 0 ? "bg-red-500/10 text-red-500" : "bg-muted text-muted-foreground"}`}>
-                <Bell className="h-5 w-5" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+export function NotificationsHeader({
+  unreadCount,
+  totalCount,
+  onMarkAllRead,
+  onClearAll
+}: NotificationsHeaderProps) {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-border bg-muted/20 p-6 rounded-t-xl">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+          Notifications
+          {unreadCount > 0 && (
+            <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold rounded-full bg-red-500 text-white">
+              {unreadCount} new
+            </span>
+          )}
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Review security events, team operations, and system alerts.
+        </p>
       </div>
-    );
-  }
-  ```
 
-- [ ] **Step 2: Create notifications-filter.tsx**
-  Implement filters for category tabs, search input, and priority drop-downs.
-  ```tsx
-  "use client";
-
-  import { Input } from "@/components/ui/input";
-  import { Search, SlidersHorizontal } from "lucide-react";
-  import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
-  import { Button } from "@/components/ui/button";
-
-  interface FilterProps {
-    search: string;
-    setSearch: (s: string) => void;
-    activeTab: string;
-    setActiveTab: (t: string) => void;
-    priorityFilter: string;
-    setPriorityFilter: (p: string) => void;
-  }
-
-  export function NotificationsFilter({
-    search,
-    setSearch,
-    activeTab,
-    setActiveTab,
-    priorityFilter,
-    setPriorityFilter,
-  }: FilterProps) {
-    const tabs = [
-      { id: "all", label: "All" },
-      { id: "unread", label: "Unread" },
-      { id: "assets", label: "Assets" },
-      { id: "security", label: "Security" },
-      { id: "organization", label: "Team" },
-      { id: "system", label: "System" },
-    ];
-
-    return (
-      <div className="flex flex-col gap-4 border-b border-border/40 pb-4">
-        {/* Tabs Bar */}
-        <div className="flex overflow-x-auto gap-1 pb-1 scrollbar-none border-b border-border/20">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-sm font-medium border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
-                activeTab === tab.id
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Inputs and Actions */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search notifications..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4" />
-                <span className="hidden sm:inline">Priority: </span>
-                <span className="font-semibold capitalize">{priorityFilter}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 bg-background border-border">
-              <DropdownMenuLabel>Filter by priority</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuRadioGroup value={priorityFilter} onValueChange={setPriorityFilter}>
-                <DropdownMenuRadioItem value="all">All Priorities</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="info">Info</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="warning">Warning</DropdownMenuRadioItem>
-                <DropdownMenuRadioItem value="critical">Critical</DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onMarkAllRead}
+          disabled={unreadCount === 0}
+          className="cursor-pointer flex items-center gap-1.5"
+        >
+          <CheckCheck className="h-4 w-4" />
+          Mark all as read
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onClearAll}
+          disabled={totalCount === 0}
+          className="cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-500/10 flex items-center gap-1.5"
+        >
+          <Trash2 className="h-4 w-4" />
+          Clear all
+        </Button>
       </div>
-    );
-  }
-  ```
+    </div>
+  );
+}
+```
 
-- [ ] **Step 3: Create notification-details-dialog.tsx**
-  Implement the detail dialog detailing changes and properties.
-  ```tsx
-  "use client";
+- [ ] **Step 2: Commit Task 3**
 
-  import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-  } from "@/components/ui/dialog";
-  import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-  import { Button } from "@/components/ui/button";
-  import { ArrowRight, Clock, ShieldAlert, Sparkles, User, Settings } from "lucide-react";
-  import { NotificationItem } from "./mock-data";
-
-  interface DetailsProps {
-    notification: NotificationItem | null;
-    isOpen: boolean;
-    onClose: () => void;
-  }
-
-  export function NotificationDetailsDialog({
-    notification,
-    isOpen,
-    onClose,
-  }: DetailsProps) {
-    if (!notification) return null;
-
-    const formattedTime = new Date(notification.created_at).toLocaleString();
-
-    // Map Category Icon
-    const getCategoryIcon = () => {
-      switch (notification.type) {
-        case "security":
-          return <ShieldAlert className="h-5 w-5 text-red-500" />;
-        case "organization":
-          return <User className="h-5 w-5 text-emerald-500" />;
-        case "assets":
-          return <Sparkles className="h-5 w-5 text-blue-500" />;
-        default:
-          return <Settings className="h-5 w-5 text-purple-500" />;
-      }
-    };
-
-    const isAuditUpdate = !!(notification.changes?.before && notification.changes?.after);
-
-    return (
-      <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-lg bg-background border-border text-foreground">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-lg bg-muted border border-border">
-                {getCategoryIcon()}
-              </div>
-              <div>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${
-                  notification.priority === "critical"
-                    ? "bg-red-500/10 text-red-500 border border-red-500/20"
-                    : notification.priority === "warning"
-                    ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                    : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
-                }`}>
-                  {notification.priority}
-                </span>
-              </div>
-            </div>
-            <DialogTitle className="text-xl font-bold">{notification.title}</DialogTitle>
-            <DialogDescription className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-              <Clock className="h-3.5 w-3.5" />
-              {formattedTime}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Description */}
-            <div
-              className="text-sm leading-relaxed text-foreground/90 bg-muted/20 p-4 rounded-lg border border-border/50"
-              dangerouslySetInnerHTML={{
-                __html: notification.description.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"),
-              }}
-            />
-
-            {/* Causer/Actor Profile */}
-            {notification.causer && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Triggered By</h4>
-                <div className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-muted/10">
-                  <Avatar className="h-9 w-9 rounded-lg">
-                    <AvatarFallback className="rounded-lg bg-primary/5 text-primary text-xs font-bold">
-                      {notification.causer.avatar || notification.causer.name[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="font-semibold text-foreground">{notification.causer.name}</span>
-                    <span className="text-xs text-muted-foreground">{notification.causer.email}</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Audit Log / Changes */}
-            {isAuditUpdate && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Property Changes</h4>
-                <div className="rounded-lg border border-border overflow-hidden">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-muted/40 border-b border-border">
-                        <th className="px-4 py-2 font-medium">Property</th>
-                        <th className="px-4 py-2 font-medium">Previous Value</th>
-                        <th className="px-4 py-2 font-medium">Updated Value</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {Object.keys(notification.changes!.before!).map((key) => (
-                        <tr key={key} className="hover:bg-muted/20">
-                          <td className="px-4 py-2 font-mono font-medium text-foreground">{key}</td>
-                          <td className="px-4 py-2 text-muted-foreground line-through">
-                            {String(notification.changes!.before![key])}
-                          </td>
-                          <td className="px-4 py-2 text-emerald-500 font-semibold flex items-center gap-1.5">
-                            <ArrowRight className="h-3.5 w-3.5" />
-                            {String(notification.changes!.after![key])}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-end gap-2 pt-2 border-t border-border/40">
-            <Button variant="ghost" onClick={onClose}>
-              Dismiss
-            </Button>
-            {notification.entity_id && (
-              <Button className="flex items-center gap-1.5" onClick={() => {
-                alert(`Navigate to entity: ${notification.entity_type} -> ${notification.entity_id}`);
-                onClose();
-              }}>
-                Inspect Resource
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-  ```
-
-- [ ] **Step 4: Commit changes**
-  ```bash
-  git add components/dashboard/notifications/notifications-header.tsx components/dashboard/notifications/notifications-filter.tsx components/dashboard/notifications/notification-details-dialog.tsx
-  git commit -m "feat(notifications): implement header, filter, and detail dialog components"
-  ```
+Run:
+```bash
+git add components/dashboard/notifications/notifications-header.tsx
+git commit -m "feat: add notifications header component"
+```
 
 ---
 
-### Task 3: Implement Item and Orchestrator Components
+### Task 4: Create Filters Component
+
+**Files:**
+- Create: `components/dashboard/notifications/notifications-filter.tsx`
+
+- [ ] **Step 1: Write filter tabs and search bar component**
+
+Create [notifications-filter.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/components/dashboard/notifications/notifications-filter.tsx):
+```typescript
+"use client";
+
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+
+interface NotificationsFilterProps {
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+}
+
+export function NotificationsFilter({
+  activeTab,
+  setActiveTab,
+  searchQuery,
+  setSearchQuery
+}: NotificationsFilterProps) {
+  const tabs = [
+    { id: "all", label: "All Events" },
+    { id: "unread", label: "Unread" },
+    { id: "alerts", label: "Alerts" },
+    { id: "system", label: "System" },
+    { id: "organization", label: "Organization" },
+  ];
+
+  return (
+    <div className="flex flex-col gap-4 md:flex-row md:items-center justify-between border-b border-border/60 px-6 py-4 bg-background/50">
+      <div className="flex flex-wrap gap-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition-all ${
+              activeTab === tab.id
+                ? "bg-primary/10 text-primary border border-primary/20 shadow-xs"
+                : "text-muted-foreground hover:bg-muted/80 border border-transparent"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="relative w-full md:w-72">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Search notifications..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-9 text-xs"
+        />
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Commit Task 4**
+
+Run:
+```bash
+git add components/dashboard/notifications/notifications-filter.tsx
+git commit -m "feat: add notification search and tab filters component"
+```
+
+---
+
+### Task 5: Create Detail Dialog Component
+
+**Files:**
+- Create: `components/dashboard/notifications/notification-details-dialog.tsx`
+
+- [ ] **Step 1: Write rad-ui overlay dialog showing full event payloads**
+
+Create [notification-details-dialog.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/components/dashboard/notifications/notification-details-dialog.tsx):
+```typescript
+"use client";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { SystemNotification } from "@/actions/notification.actions";
+import { Clock, ExternalLink } from "lucide-react";
+import Link from "next/link";
+
+interface NotificationDetailsDialogProps {
+  notification: SystemNotification | null;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function NotificationDetailsDialog({
+  notification,
+  isOpen,
+  onClose
+}: NotificationDetailsDialogProps) {
+  if (!notification) return null;
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-lg bg-background text-foreground border border-border rounded-lg shadow-xl">
+        <DialogHeader>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{new Date(notification.created_at).toLocaleString()}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+              notification.priority === "critical"
+                ? "bg-red-500/10 text-red-600 border border-red-500/20"
+                : notification.priority === "warning"
+                ? "bg-amber-500/10 text-amber-600 border border-amber-500/20"
+                : "bg-blue-500/10 text-blue-600 border border-blue-500/20"
+            }`}>
+              {notification.priority}
+            </span>
+          </div>
+          <DialogTitle className="text-lg font-bold text-foreground">
+            {notification.title}
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground pt-2">
+            {notification.description}
+          </DialogDescription>
+        </DialogHeader>
+
+        {notification.changes && (
+          <div className="my-4 p-4 rounded-lg bg-muted/40 border border-border/80 text-xs">
+            <h5 className="font-bold text-foreground mb-2 uppercase tracking-wide text-[10px]">
+              Payload Modification Diff
+            </h5>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="font-semibold text-red-500 mb-1">Before:</p>
+                <pre className="bg-red-500/5 p-2 rounded-md border border-red-500/10 max-h-40 overflow-y-auto font-mono text-[11px]">
+                  {JSON.stringify(notification.changes.before, null, 2)}
+                </pre>
+              </div>
+              <div>
+                <p className="font-semibold text-emerald-500 mb-1">After:</p>
+                <pre className="bg-emerald-500/5 p-2 rounded-md border border-emerald-500/10 max-h-40 overflow-y-auto font-mono text-[11px]">
+                  {JSON.stringify(notification.changes.after, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" size="sm" onClick={onClose} className="cursor-pointer">
+            Close
+          </Button>
+          {notification.link && (
+            <Button asChild size="sm" className="cursor-pointer flex items-center gap-1">
+              <Link href={notification.link} onClick={onClose}>
+                Go to resource <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+```
+
+- [ ] **Step 2: Commit Task 5**
+
+Run:
+```bash
+git add components/dashboard/notifications/notification-details-dialog.tsx
+git commit -m "feat: add notification details dialog component with diff rendering"
+```
+
+---
+
+### Task 6: Create Notification Item Component
 
 **Files:**
 - Create: `components/dashboard/notifications/notification-item.tsx`
-- Create: `components/dashboard/notifications/notifications-list.tsx`
 
-- [ ] **Step 1: Create notification-item.tsx**
-  Implement individual notification items with visual indicators and hover actions.
-  ```tsx
-  "use client";
+- [ ] **Step 1: Write list card representation for single notification**
 
-  import { NotificationItem } from "./mock-data";
-  import { Card, CardContent } from "@/components/ui/card";
-  import { Button } from "@/components/ui/button";
-  import {
-    CheckCircle,
-    Circle,
-    Eye,
-    ShieldAlert,
-    Sparkles,
-    User,
-    Settings,
-    Trash2,
-    Calendar,
-  } from "lucide-react";
+Create [notification-item.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/components/dashboard/notifications/notification-item.tsx):
+```typescript
+"use client";
 
-  interface ItemProps {
-    notification: NotificationItem;
-    onToggleRead: (id: string) => void;
-    onDelete: (id: string) => void;
-    onSelect: (item: NotificationItem) => void;
-  }
+import { Button } from "@/components/ui/button";
+import { SystemNotification } from "@/actions/notification.actions";
+import {
+  Bell,
+  AlertTriangle,
+  Users,
+  HardDrive,
+  Check,
+  Eye,
+  Trash2,
+  AlertCircle
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
-  export function NotificationItemCard({
-    notification,
-    onToggleRead,
-    onDelete,
-    onSelect,
-  }: ItemProps) {
-    // Relative date formatter
-    const getRelativeTime = (isoString: string) => {
-      const diffMs = Date.now() - new Date(isoString).getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      if (diffMins < 1) return "Just now";
-      if (diffMins < 60) return `${diffMins}m ago`;
-      const diffHrs = Math.floor(diffMins / 60);
-      if (diffHrs < 24) return `${diffHrs}h ago`;
-      const diffDays = Math.floor(diffHrs / 24);
-      return `${diffDays}d ago`;
+interface NotificationItemProps {
+  notification: SystemNotification;
+  onMarkRead: (id: string) => void;
+  onDelete: (id: string) => void;
+  onViewDetails: (notification: SystemNotification) => void;
+}
+
+export function NotificationItem({
+  notification,
+  onMarkRead,
+  onDelete,
+  onViewDetails
+}: NotificationItemProps) {
+  // Select Icon
+  const getIcon = () => {
+    switch (notification.type) {
+      case "security":
+        return <AlertTriangle className="h-4 w-4" />;
+      case "organization":
+        return <Users className="h-4 w-4" />;
+      case "asset":
+        return <HardDrive className="h-4 w-4" />;
+      default:
+        return <Bell className="h-4 w-4" />;
+    }
+  };
+
+  // Map Colors
+  const getColorStyles = () => {
+    if (notification.priority === "critical") {
+      return {
+        bg: "bg-red-500/10",
+        text: "text-red-600 dark:text-red-400",
+        border: "border-red-500/20"
+      };
+    }
+    if (notification.priority === "warning") {
+      return {
+        bg: "bg-amber-500/10",
+        text: "text-amber-600 dark:text-amber-400",
+        border: "border-amber-500/20"
+      };
+    }
+    return {
+      bg: "bg-blue-500/10",
+      text: "text-blue-600 dark:text-blue-400",
+      border: "border-blue-500/20"
     };
+  };
 
-    // Icon setup
-    const getIconConfig = () => {
-      const base = "h-4 w-4";
-      switch (notification.type) {
-        case "security":
-          return {
-            element: <ShieldAlert className={base} />,
-            bg: "bg-red-500/10 text-red-500 border border-red-500/20",
-          };
-        case "organization":
-          return {
-            element: <User className={base} />,
-            bg: "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20",
-          };
-        case "assets":
-          return {
-            element: <Sparkles className={base} />,
-            bg: "bg-blue-500/10 text-blue-500 border border-blue-500/20",
-          };
-        default:
-          return {
-            element: <Settings className={base} />,
-            bg: "bg-purple-500/10 text-purple-500 border border-purple-500/20",
-          };
-      }
-    };
+  const colors = getColorStyles();
 
-    const icon = getIconConfig();
-
-    return (
-      <Card
-        onClick={() => onSelect(notification)}
-        className={`group relative border-border/60 overflow-hidden cursor-pointer transition-all duration-300 hover:bg-muted/40 hover:border-primary/20 ${
-          notification.isRead ? "bg-card/20 opacity-75" : "bg-card/85 shadow-sm border-l-4 border-l-primary"
-        }`}
-      >
-        <CardContent className="p-4 flex gap-4">
-          {/* Icon Badge */}
-          <div className="flex-shrink-0 mt-0.5">
-            <div className={`p-2.5 rounded-lg ${icon.bg}`}>
-              {icon.element}
-            </div>
-          </div>
-
-          {/* Center Details */}
-          <div className="flex-1 min-w-0 pr-8">
-            <div className="flex items-center gap-2">
-              <h4 className={`text-sm truncate text-foreground ${notification.isRead ? "font-medium" : "font-semibold"}`}>
-                {notification.title}
-              </h4>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full capitalize font-semibold ${
-                notification.priority === "critical"
-                  ? "bg-red-500/15 text-red-500 border border-red-500/10"
-                  : notification.priority === "warning"
-                  ? "bg-amber-500/15 text-amber-500 border border-amber-500/10"
-                  : "bg-blue-500/15 text-blue-500 border border-blue-500/10"
-              }`}>
-                {notification.priority}
-              </span>
-            </div>
-
-            <p
-              className="text-xs text-muted-foreground/90 mt-1 line-clamp-2 leading-relaxed"
-              dangerouslySetInnerHTML={{
-                __html: notification.description.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"),
-              }}
-            />
-
-            <div className="flex items-center gap-3 mt-3 text-[10px] text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {getRelativeTime(notification.created_at)}
-              </span>
-              <span>•</span>
-              <span className="uppercase tracking-wider">{notification.type}</span>
-            </div>
-          </div>
-
-          {/* Action Column on hover */}
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity bg-background/95 border border-border/40 p-1 rounded-lg shadow-md z-10">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
-              title={notification.isRead ? "Mark as unread" : "Mark as read"}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleRead(notification.id);
-              }}
-            >
-              {notification.isRead ? <Circle className="h-3.5 w-3.5" /> : <CheckCircle className="h-3.5 w-3.5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-              title="Delete Notification"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(notification.id);
-              }}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-  ```
-
-- [ ] **Step 2: Create notifications-list.tsx**
-  Implement list orchestrator combining state management (LocalStorage) and filters.
-  ```tsx
-  "use client";
-
-  import { useState, useEffect } from "react";
-  import { INITIAL_NOTIFICATIONS, NotificationItem } from "./mock-data";
-  import { NotificationsHeader } from "./notifications-header";
-  import { NotificationsFilter } from "./notifications-filter";
-  import { NotificationItemCard } from "./notification-item";
-  import { NotificationDetailsDialog } from "./notification-details-dialog";
-  import { Card, CardContent } from "@/components/ui/card";
-  import { BellOff, RefreshCw } from "lucide-react";
-  import { Button } from "@/components/ui/button";
-
-  const STORAGE_KEY = "tracerpro_notifications_v1";
-
-  export function NotificationsList() {
-    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-    const [search, setSearch] = useState("");
-    const [activeTab, setActiveTab] = useState("all");
-    const [priorityFilter, setPriorityFilter] = useState("all");
-    const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
-    const [detailsOpen, setDetailsOpen] = useState(false);
-
-    // Initial state loading
-    useEffect(() => {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        try {
-          setNotifications(JSON.parse(stored));
-        } catch {
-          setNotifications(INITIAL_NOTIFICATIONS);
-        }
-      } else {
-        setNotifications(INITIAL_NOTIFICATIONS);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_NOTIFICATIONS));
-      }
-    }, []);
-
-    // Save helpers
-    const saveState = (updated: NotificationItem[]) => {
-      setNotifications(updated);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    };
-
-    // Actions
-    const handleToggleRead = (id: string) => {
-      const updated = notifications.map((n) =>
-        n.id === id ? { ...n, isRead: !n.isRead } : n
-      );
-      saveState(updated);
-    };
-
-    const handleDelete = (id: string) => {
-      const updated = notifications.filter((n) => n.id !== id);
-      saveState(updated);
-      if (selectedNotification?.id === id) {
-        setDetailsOpen(false);
-      }
-    };
-
-    const handleMarkAllAsRead = () => {
-      const updated = notifications.map((n) => ({ ...n, isRead: true }));
-      saveState(updated);
-    };
-
-    const handleClearAllRead = () => {
-      const updated = notifications.filter((n) => !n.isRead);
-      saveState(updated);
-    };
-
-    const handleReset = () => {
-      saveState(INITIAL_NOTIFICATIONS);
-    };
-
-    // Filter Logic
-    const filtered = notifications.filter((n) => {
-      // Search matches
-      const matchesSearch =
-        n.title.toLowerCase().includes(search.toLowerCase()) ||
-        n.description.toLowerCase().includes(search.toLowerCase()) ||
-        (n.user_name && n.user_name.toLowerCase().includes(search.toLowerCase())) ||
-        (n.causer?.name && n.causer.name.toLowerCase().includes(search.toLowerCase()));
-
-      // Tab filter
-      let matchesTab = true;
-      if (activeTab === "unread") matchesTab = !n.isRead;
-      else if (activeTab !== "all") matchesTab = n.type === activeTab;
-
-      // Priority filter
-      const matchesPriority = priorityFilter === "all" || n.priority === priorityFilter;
-
-      return matchesSearch && matchesTab && matchesPriority;
-    });
-
-    return (
-      <div className="space-y-6 max-w-5xl mx-auto">
-        <NotificationsHeader
-          notifications={notifications}
-          onMarkAllAsRead={handleMarkAllAsRead}
-          onClearAllRead={handleClearAllRead}
-        />
-
-        <NotificationsFilter
-          search={search}
-          setSearch={setSearch}
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          priorityFilter={priorityFilter}
-          setPriorityFilter={setPriorityFilter}
-        />
-
-        {/* List Grid */}
-        <div className="space-y-3">
-          {filtered.length > 0 ? (
-            filtered.map((item) => (
-              <NotificationItemCard
-                key={item.id}
-                notification={item}
-                onToggleRead={handleToggleRead}
-                onDelete={handleDelete}
-                onSelect={(n) => {
-                  // Mark as read immediately on click if it was unread
-                  if (!n.isRead) {
-                    handleToggleRead(n.id);
-                  }
-                  setSelectedNotification(n);
-                  setDetailsOpen(true);
-                }}
-              />
-            ))
-          ) : (
-            <Card className="border-dashed border-2 border-border/80 bg-card/10">
-              <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-                <div className="p-4 rounded-full bg-muted/40 text-muted-foreground mb-4">
-                  <BellOff className="h-8 w-8" />
-                </div>
-                <h3 className="font-bold text-lg text-foreground">No notifications found</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mt-2">
-                  There are no updates matching your search queries or filter categories.
-                </p>
-                <div className="flex gap-2 mt-6">
-                  {(search || activeTab !== "all" || priorityFilter !== "all") && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSearch("");
-                        setActiveTab("all");
-                        setPriorityFilter("all");
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
-                  <Button variant="secondary" size="sm" onClick={handleReset} className="flex items-center gap-1.5">
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    Reset Initial Mock List
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+  return (
+    <div
+      className={`group relative flex items-start justify-between gap-4 p-4 border border-border/50 bg-card/45 hover:bg-card/90 transition-all duration-300 rounded-lg shadow-xs ${
+        !notification.read ? "border-l-4 border-l-primary" : ""
+      }`}
+    >
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div
+          className={`size-8 rounded-full flex items-center justify-center shrink-0 shadow-xs ring-1 ring-border/20 ${colors.bg} ${colors.text}`}
+        >
+          {getIcon()}
         </div>
 
-        {/* Audit Details Modal */}
-        <NotificationDetailsDialog
-          notification={selectedNotification}
-          isOpen={detailsOpen}
-          onClose={() => setDetailsOpen(false)}
-        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={`font-semibold text-sm truncate ${!notification.read ? "text-foreground font-bold" : "text-muted-foreground"}`}>
+              {notification.title}
+            </span>
+            {!notification.read && (
+              <span className="h-2 w-2 rounded-full bg-primary shrink-0 animate-pulse" />
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+            {notification.description}
+          </p>
+          <span className="text-[10px] text-muted-foreground/80 mt-2 block">
+            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+          </span>
+        </div>
       </div>
-    );
-  }
-  ```
 
-- [ ] **Step 3: Commit changes**
-  ```bash
-  git add components/dashboard/notifications/notification-item.tsx components/dashboard/notifications/notifications-list.tsx
-  git commit -m "feat(notifications): implement item card and main orchestrator list components"
-  ```
+      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onViewDetails(notification)}
+          className="h-7 w-7 text-muted-foreground hover:text-foreground cursor-pointer"
+          title="View Details"
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+        {!notification.read && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onMarkRead(notification.id)}
+            className="h-7 w-7 text-muted-foreground hover:text-emerald-500 cursor-pointer"
+            title="Mark as Read"
+          >
+            <Check className="h-4 w-4" />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onDelete(notification.id)}
+          className="h-7 w-7 text-muted-foreground hover:text-red-500 cursor-pointer"
+          title="Delete Notification"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Commit Task 6**
+
+Run:
+```bash
+git add components/dashboard/notifications/notification-item.tsx
+git commit -m "feat: add individual notification item card component"
+```
 
 ---
 
-### Task 4: Modify AppHeader, NavUser, and Render Page
+### Task 7: Create Orchestrator (NotificationsList)
+
+**Files:**
+- Create: `components/dashboard/notifications/notifications-list.tsx`
+
+- [ ] **Step 1: Write notifications-list orchestration logic**
+
+Create [notifications-list.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/components/dashboard/notifications/notifications-list.tsx):
+```typescript
+"use client";
+
+import { useEffect, useState, startTransition } from "react";
+import { SystemNotification, getNotifications, markAsRead, markAllAsRead, deleteNotification } from "@/actions/notification.actions";
+import { INITIAL_MOCK_NOTIFICATIONS } from "./mock-data";
+import { NotificationsHeader } from "./notifications-header";
+import { NotificationsFilter } from "./notifications-filter";
+import { NotificationItem } from "./notification-item";
+import { NotificationDetailsDialog } from "./notification-details-dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+
+export function NotificationsList() {
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedNotification, setSelectedNotification] = useState<SystemNotification | null>(null);
+
+  const fetchItems = () => {
+    startTransition(async () => {
+      setLoading(true);
+      const res = await getNotifications();
+      if (res.error === "fallback_needed") {
+        const local = localStorage.getItem("tp_notifications");
+        if (local) {
+          setNotifications(JSON.parse(local));
+        } else {
+          localStorage.setItem("tp_notifications", JSON.stringify(INITIAL_MOCK_NOTIFICATIONS));
+          setNotifications(INITIAL_MOCK_NOTIFICATIONS);
+        }
+      } else if (res.data) {
+        setNotifications(res.data);
+      }
+      setLoading(false);
+    });
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const saveLocalState = (items: SystemNotification[]) => {
+    setNotifications(items);
+    localStorage.setItem("tp_notifications", JSON.stringify(items));
+  };
+
+  const handleMarkRead = (id: string) => {
+    startTransition(async () => {
+      const res = await markAsRead(id);
+      if (!res.success) {
+        // Fallback
+        const updated = notifications.map((n) => (n.id === id ? { ...n, read: true } : n));
+        saveLocalState(updated);
+        toast.success("Notification marked as read");
+      } else {
+        fetchItems();
+        toast.success("Notification marked as read");
+      }
+    });
+  };
+
+  const handleMarkAllRead = () => {
+    startTransition(async () => {
+      const res = await markAllAsRead();
+      if (!res.success) {
+        // Fallback
+        const updated = notifications.map((n) => ({ ...n, read: true }));
+        saveLocalState(updated);
+        toast.success("All notifications marked as read");
+      } else {
+        fetchItems();
+        toast.success("All notifications marked as read");
+      }
+    });
+  };
+
+  const handleDelete = (id: string) => {
+    startTransition(async () => {
+      const res = await deleteNotification(id);
+      if (!res.success) {
+        // Fallback
+        const updated = notifications.filter((n) => n.id !== id);
+        saveLocalState(updated);
+        toast.success("Notification deleted");
+      } else {
+        fetchItems();
+        toast.success("Notification deleted");
+      }
+    });
+  };
+
+  const handleClearAll = () => {
+    startTransition(async () => {
+      // Direct Clear
+      saveLocalState([]);
+      toast.success("All notifications cleared");
+    });
+  };
+
+  // Filter & Search Logic
+  const filtered = notifications.filter((item) => {
+    // Search filter
+    const matchesSearch =
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // Tab filter
+    if (activeTab === "unread") return !item.read;
+    if (activeTab === "alerts") return item.priority === "critical" || item.priority === "warning";
+    if (activeTab === "system") return item.type === "system";
+    if (activeTab === "organization") return item.type === "organization";
+
+    return true;
+  });
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  return (
+    <Card className="border-border bg-card/60 backdrop-blur-md shadow-md max-w-4xl mx-auto">
+      <NotificationsHeader
+        unreadCount={unreadCount}
+        totalCount={notifications.length}
+        onMarkAllRead={handleMarkAllRead}
+        onClearAll={handleClearAll}
+      />
+
+      <NotificationsFilter
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+      />
+
+      <CardContent className="p-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-sm text-muted-foreground">
+              No notifications found matching your selection.
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {filtered.map((item) => (
+              <NotificationItem
+                key={item.id}
+                notification={item}
+                onMarkRead={handleMarkRead}
+                onDelete={handleDelete}
+                onViewDetails={(n) => setSelectedNotification(n)}
+              />
+            ))}
+          </div>
+        )}
+      </CardContent>
+
+      <NotificationDetailsDialog
+        notification={selectedNotification}
+        isOpen={selectedNotification !== null}
+        onClose={() => setSelectedNotification(null)}
+      />
+    </Card>
+  );
+}
+```
+
+- [ ] **Step 2: Commit Task 7**
+
+Run:
+```bash
+git add components/dashboard/notifications/notifications-list.tsx
+git commit -m "feat: add main notifications list orchestrator component"
+```
+
+---
+
+### Task 8: Set Up Page Entries
+
+**Files:**
+- Modify: `app/dashboard/notifications/page.tsx`
+- Delete: `app/dashboard/notifcations/page.tsx` (removes old typo directory)
+
+- [ ] **Step 1: Implement entry page file pointing to NotificationsList**
+
+Ensure [app/dashboard/notifications/page.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/app/dashboard/notifications/page.tsx) matches exactly:
+```typescript
+import { NotificationsList } from "@/components/dashboard/notifications/notifications-list";
+
+export default function NotificationsPage() {
+  return <NotificationsList />;
+}
+```
+
+- [ ] **Step 2: Delete duplicate typo directory `/dashboard/notifcations`**
+
+Run:
+```bash
+rm -rf app/dashboard/notifcations
+```
+
+- [ ] **Step 3: Commit Task 8**
+
+Run:
+```bash
+git add app/dashboard/notifications/page.tsx
+git rm -rf app/dashboard/notifcations || true
+git commit -m "feat: setup clean notifications route page entry and delete typo route directory"
+```
+
+---
+
+### Task 9: Wire Up Headers & Navigation Links
 
 **Files:**
 - Modify: `components/sidebar/app-header.tsx`
 - Modify: `components/sidebar/nav-user.tsx`
-- Modify: `app/dashboard/notifcations/page.tsx`
 
-- [ ] **Step 1: Wire Notifications Link in AppHeader**
-  Update `components/sidebar/app-header.tsx` to wrap the notification button in a Link and register the breadcrumb override mapping.
-  Lines to edit:
-  - Add import: `import Link from "next/link";`
-  - Map `notifcations: "Notifications"` in DynamicBreadcrumbs `labelMap` object.
-  - Wrap notifications Button with `<Link href="/dashboard/notifcations" passHref>`
+- [ ] **Step 1: Link Bell icon button to notification page and add Breadcrumb map**
 
-  Check code:
-  ```tsx
-  // ...
-  import Link from "next/link";
-  // ...
-        <DynamicBreadcrumbs
-          className="hidden md:flex"
-          showHome={false}
-          labelMap={{
-            dashboard: "Dashboard",
-            users: "Users",
-            settings: "Settings",
-            notifcations: "Notifications",
-          }}
-        />
-  // ...
-        {/* Notifications */}
+Modify [app-header.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/components/sidebar/app-header.tsx) to wrap the Bell button with a Link, and update labelMap configs to display "Notifications":
+```typescript
+<<<<
+      {/* Breadcrumb */}
 
-        <Link href="/dashboard/notifcations" passHref legacyBehavior>
-          <Button variant="ghost" size="icon" className="relative">
+      <DynamicBreadcrumbs
+        className="hidden md:flex"
+        showHome={false}
+        labelMap={{
+          dashboard: "Dashboard",
+          users: "Users",
+          settings: "Settings",
+        }}
+      />
+====
+      {/* Breadcrumb */}
+
+      <DynamicBreadcrumbs
+        className="hidden md:flex"
+        showHome={false}
+        labelMap={{
+          dashboard: "Dashboard",
+          users: "Users",
+          settings: "Settings",
+          notifications: "Notifications",
+        }}
+      />
+>>>>
+<<<<
+      {/* Notifications */}
+
+      <Button variant="ghost" size="icon" className="relative">
+        <Bell className="h-5 w-5" />
+
+        {/* Notification Badge */}
+
+        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
+      </Button>
+====
+      {/* Notifications */}
+
+      <Link href="/dashboard/notifications" passHref legacyBehavior>
+        <Button asChild variant="ghost" size="icon" className="relative cursor-pointer">
+          <a>
             <Bell className="h-5 w-5" />
 
             {/* Notification Badge */}
 
             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
-          </Button>
-        </Link>
-  ```
+          </a>
+        </Button>
+      </Link>
+>>>>
+```
+*(Also add the `Link` import if missing: `import Link from "next/link";`)*
 
-- [ ] **Step 2: Wire Notifications Link in NavUser**
-  Modify `components/sidebar/nav-user.tsx` to wrap the "Notifications" dropdown menu option with a standard Next.js Link.
-  Lines to edit:
-  - Add `<Link href="/dashboard/notifcations" className="flex w-full items-center">` inside `DropdownMenuItem`.
+- [ ] **Step 2: Link NavUser dropdown item to notification page**
 
-  Check code:
-  ```tsx
-  // ...
+Modify [nav-user.tsx](file:///Users/mbp/Desktop/Code/tracerpro-new/components/sidebar/nav-user.tsx) to wrap the Bell Notifications dropdown item in a Link:
+```typescript
+<<<<
+              <DropdownMenuItem>
+                <Bell className="mr-2 h-4 w-4" />
+                Notifications
+              </DropdownMenuItem>
+====
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/notifcations" className="flex w-full items-center">
+                <Link href="/dashboard/notifications" className="flex w-full items-center">
                   <Bell className="mr-2 h-4 w-4" />
                   Notifications
                 </Link>
               </DropdownMenuItem>
-  // ...
-  ```
+>>>>
+```
 
-- [ ] **Step 3: Render Notifications Page**
-  Modify `/Users/mbp/Desktop/Code/tracerpro-new/app/dashboard/notifcations/page.tsx` to render the newly implemented `NotificationsList` component.
-  ```tsx
-  import { NotificationsList } from "@/components/dashboard/notifications/notifications-list";
+- [ ] **Step 3: Commit Task 9**
 
-  export default function NotificationsPage() {
-    return <NotificationsList />;
-  }
-  ```
-
-- [ ] **Step 4: Verify Compilation and Commit**
-  Run: `pnpm tsc --noEmit` to check for typescript errors.
-  Commit:
-  ```bash
-  git add components/sidebar/app-header.tsx components/sidebar/nav-user.tsx app/dashboard/notifcations/page.tsx
-  git commit -m "feat(notifications): wire app header, user menu dropdown, and render notification list page"
-  ```
+Run:
+```bash
+git add components/sidebar/app-header.tsx components/sidebar/nav-user.tsx
+git commit -m "feat: link AppHeader bell button and NavUser dropdown to notifications page"
+```
 
 ---
 
-### Task 5: Verify Implementation and Visual Cleanliness
+### Task 10: Build and Lint Validation
 
-- [ ] **Step 1: Check build**
-  Run: `pnpm build`
-  Expected: Success without TypeScript or build issues.
+**Files:**
+- None
 
-- [ ] **Step 2: Clean check**
-  Run `git status` to ensure working directory is clean.
-  Expected: Clean working tree.
+- [ ] **Step 1: Check TS and Eslint builds**
+
+Run:
+```bash
+pnpm lint && npx tsc --noEmit
+```
+Expected: Clean build with no code checks or layout failures.
+
+- [ ] **Step 2: Commit Task 10**
+
+Run:
+```bash
+git commit --allow-empty -m "chore: verify build compilation and linting successfully passes"
+```
