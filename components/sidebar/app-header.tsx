@@ -7,10 +7,11 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 
 import { Search, Bell } from "lucide-react";
 import { DynamicBreadcrumbs } from "@/components/sidebar/dynamic-breadcrumbs";
+import Link from "next/link";
 
 export function AppHeader() {
   return (
-    <header className="flex sticky top-0 z-50 w-full h-14 items-center gap-4 border-b backdrop-blur-md px-4">
+    <header className="flex absolute top-0 left-0 right-0 z-50 h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-xs px-4">
       {/* Sidebar Toggle */}
 
       <SidebarTrigger />
@@ -24,6 +25,7 @@ export function AppHeader() {
           dashboard: "Dashboard",
           users: "Users",
           settings: "Settings",
+          notifcations: "Notifications",
         }}
       />
 
@@ -41,13 +43,15 @@ export function AppHeader() {
 
       {/* Notifications */}
 
-      <Button variant="ghost" size="icon" className="relative">
-        <Bell className="h-5 w-5" />
+      <Link href="/dashboard/notifcations" passHref legacyBehavior>
+        <Button variant="ghost" size="icon" className="relative cursor-pointer">
+          <Bell className="h-5 w-5" />
 
-        {/* Notification Badge */}
+          {/* Notification Badge */}
 
-        <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
-      </Button>
+          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
+        </Button>
+      </Link>
     </header>
   );
 }
