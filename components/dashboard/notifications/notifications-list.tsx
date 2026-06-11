@@ -1,173 +1,171 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { INITIAL_NOTIFICATIONS, NotificationItem } from "./mock-data";
+import { useEffect, useState, startTransition } from "react";
+import { SystemNotification, getNotifications, markAsRead, markAllAsRead, deleteNotification } from "@/actions/notification.actions";
+import { INITIAL_MOCK_NOTIFICATIONS } from "./mock-data";
 import { NotificationsHeader } from "./notifications-header";
 import { NotificationsFilter } from "./notifications-filter";
-import { NotificationItemCard } from "./notification-item";
+import { NotificationItem } from "./notification-item";
 import { NotificationDetailsDialog } from "./notification-details-dialog";
 import { Card, CardContent } from "@/components/ui/card";
-import { BellOff, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-
-const STORAGE_KEY = "tracerpro_notifications_v1";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export function NotificationsList() {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [search, setSearch] = useState("");
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
-  const [selectedNotification, setSelectedNotification] = useState<NotificationItem | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedNotification, setSelectedNotification] = useState<SystemNotification | null>(null);
 
-  // Initial state loading
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setNotifications(JSON.parse(stored));
-      } catch {
-        setNotifications(INITIAL_NOTIFICATIONS);
+  const fetchItems = () => {
+    startTransition(async () => {
+      setLoading(true);
+      const res = await getNotifications();
+      if (res.error === "fallback_needed") {
+        const local = localStorage.getItem("tp_notifications");
+        if (local) {
+          setNotifications(JSON.parse(local));
+        } else {
+          localStorage.setItem("tp_notifications", JSON.stringify(INITIAL_MOCK_NOTIFICATIONS));
+          setNotifications(INITIAL_MOCK_NOTIFICATIONS);
+        }
+      } else if (res.data) {
+        setNotifications(res.data);
       }
-    } else {
-      setNotifications(INITIAL_NOTIFICATIONS);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_NOTIFICATIONS));
-    }
-  }, []);
-
-  // Save helpers
-  const saveState = (updated: NotificationItem[]) => {
-    setNotifications(updated);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      setLoading(false);
+    });
   };
 
-  // Actions
-  const handleToggleRead = (id: string) => {
-    const updated = notifications.map((n) =>
-      n.id === id ? { ...n, isRead: !n.isRead } : n
-    );
-    saveState(updated);
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const saveLocalState = (items: SystemNotification[]) => {
+    setNotifications(items);
+    localStorage.setItem("tp_notifications", JSON.stringify(items));
+  };
+
+  const handleMarkRead = (id: string) => {
+    startTransition(async () => {
+      const res = await markAsRead(id);
+      if (!res.success) {
+        // Fallback
+        const updated = notifications.map((n) => (n.id === id ? { ...n, read: true } : n));
+        saveLocalState(updated);
+        toast.success("Notification marked as read");
+      } else {
+        fetchItems();
+        toast.success("Notification marked as read");
+      }
+    });
+  };
+
+  const handleMarkAllRead = () => {
+    startTransition(async () => {
+      const res = await markAllAsRead();
+      if (!res.success) {
+        // Fallback
+        const updated = notifications.map((n) => ({ ...n, read: true }));
+        saveLocalState(updated);
+        toast.success("All notifications marked as read");
+      } else {
+        fetchItems();
+        toast.success("All notifications marked as read");
+      }
+    });
   };
 
   const handleDelete = (id: string) => {
-    const updated = notifications.filter((n) => n.id !== id);
-    saveState(updated);
-    if (selectedNotification?.id === id) {
-      setDetailsOpen(false);
-    }
+    startTransition(async () => {
+      const res = await deleteNotification(id);
+      if (!res.success) {
+        // Fallback
+        const updated = notifications.filter((n) => n.id !== id);
+        saveLocalState(updated);
+        toast.success("Notification deleted");
+      } else {
+        fetchItems();
+        toast.success("Notification deleted");
+      }
+    });
   };
 
-  const handleMarkAllAsRead = () => {
-    const updated = notifications.map((n) => ({ ...n, isRead: true }));
-    saveState(updated);
+  const handleClearAll = () => {
+    startTransition(async () => {
+      // Direct Clear
+      saveLocalState([]);
+      toast.success("All notifications cleared");
+    });
   };
 
-  const handleClearAllRead = () => {
-    const updated = notifications.filter((n) => !n.isRead);
-    saveState(updated);
-  };
-
-  const handleReset = () => {
-    saveState(INITIAL_NOTIFICATIONS);
-  };
-
-  // Filter Logic
-  const filtered = notifications.filter((n) => {
-    // Search matches
+  // Filter & Search Logic
+  const filtered = notifications.filter((item) => {
+    // Search filter
     const matchesSearch =
-      n.title.toLowerCase().includes(search.toLowerCase()) ||
-      n.description.toLowerCase().includes(search.toLowerCase()) ||
-      (n.user_name && n.user_name.toLowerCase().includes(search.toLowerCase())) ||
-      (n.causer?.name && n.causer.name.toLowerCase().includes(search.toLowerCase()));
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    if (!matchesSearch) return false;
 
     // Tab filter
-    let matchesTab = true;
-    if (activeTab === "unread") matchesTab = !n.isRead;
-    else if (activeTab !== "all") matchesTab = n.type === activeTab;
+    if (activeTab === "unread") return !item.read;
+    if (activeTab === "alerts") return item.priority === "critical" || item.priority === "warning";
+    if (activeTab === "system") return item.type === "system";
+    if (activeTab === "organization") return item.type === "organization";
 
-    // Priority filter
-    const matchesPriority = priorityFilter === "all" || n.priority === priorityFilter;
-
-    return matchesSearch && matchesTab && matchesPriority;
+    return true;
   });
 
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <Card className="border-border bg-card/60 backdrop-blur-md shadow-md max-w-4xl mx-auto">
       <NotificationsHeader
-        notifications={notifications}
-        onMarkAllAsRead={handleMarkAllAsRead}
-        onClearAllRead={handleClearAllRead}
+        unreadCount={unreadCount}
+        totalCount={notifications.length}
+        onMarkAllRead={handleMarkAllRead}
+        onClearAll={handleClearAll}
       />
 
       <NotificationsFilter
-        search={search}
-        setSearch={setSearch}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        priorityFilter={priorityFilter}
-        setPriorityFilter={setPriorityFilter}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
       />
 
-      {/* List Grid */}
-      <div className="space-y-3">
-        {filtered.length > 0 ? (
-          filtered.map((item) => (
-            <NotificationItemCard
-              key={item.id}
-              notification={item}
-              onToggleRead={handleToggleRead}
-              onDelete={handleDelete}
-              onSelect={(n) => {
-                // Mark as read immediately on click if it was unread
-                if (!n.isRead) {
-                  handleToggleRead(n.id);
-                }
-                setSelectedNotification(n);
-                setDetailsOpen(true);
-              }}
-            />
-          ))
+      <CardContent className="p-6">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-sm text-muted-foreground">
+              No notifications found matching your selection.
+            </p>
+          </div>
         ) : (
-          <Card className="border-dashed border-2 border-border/80 bg-card/10">
-            <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="p-4 rounded-full bg-muted/40 text-muted-foreground mb-4">
-                <BellOff className="h-8 w-8" />
-              </div>
-              <h3 className="font-bold text-lg text-foreground">No notifications found</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mt-2">
-                There are no updates matching your search queries or filter categories.
-              </p>
-              <div className="flex gap-2 mt-6">
-                {(search || activeTab !== "all" || priorityFilter !== "all") && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearch("");
-                      setActiveTab("all");
-                      setPriorityFilter("all");
-                    }}
-                    className="cursor-pointer"
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-                <Button variant="secondary" size="sm" onClick={handleReset} className="flex items-center gap-1.5 cursor-pointer">
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Reset Initial Mock List
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex flex-col gap-3">
+            {filtered.map((item) => (
+              <NotificationItem
+                key={item.id}
+                notification={item}
+                onMarkRead={handleMarkRead}
+                onDelete={handleDelete}
+                onViewDetails={(n) => setSelectedNotification(n)}
+              />
+            ))}
+          </div>
         )}
-      </div>
+      </CardContent>
 
-      {/* Audit Details Modal */}
       <NotificationDetailsDialog
         notification={selectedNotification}
-        isOpen={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
+        isOpen={selectedNotification !== null}
+        onClose={() => setSelectedNotification(null)}
       />
-    </div>
+    </Card>
   );
 }
