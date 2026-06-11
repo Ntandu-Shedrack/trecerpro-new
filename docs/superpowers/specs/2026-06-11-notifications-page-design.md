@@ -1,117 +1,85 @@
-# Design Spec: Notifications Page and Modular Components
+# Notifications Page Design Specification
 
-This design specification details the implementation of a dedicated notifications/activity history page (`app/dashboard/notifcations/page.tsx`) and its corresponding modular components under `components/dashboard/notifications`.
+Implement a premium, interactive notification system in TracerPro. This allows users to track organizational modifications, security/audit events, and project changes. It operates via Server Actions, querying the Laravel backend where available, and seamlessly falling back to high-fidelity localized client storage (with `localStorage` persistence) when backend endpoints are missing or offline.
 
-This feature allows users to keep track of critical system alerts, asset operations, organization membership events, and general activities in a highly interactive, responsive, and aesthetically premium manner.
+## User Review Required
 
----
+> [!NOTE]
+> The notification page will be accessible via both the **User Navigation Dropdown** (User Nav) and the **App Header Notification Bell**.
+> Since the Laravel API might not have dedicated tables or endpoints for notifications yet, the system is designed to automatically fall back to simulated client-side storage populated with premium mock records. Updates (marking read, deleting) will be stored in `localStorage` in fallback mode so that they persist correctly.
 
-## 1. Page and Layout Integration
+## Proposed Changes
 
-We will wire the notifications page into the two main navigation points specified by the user:
+### Component Architecture
 
-### 1.1 App Header (`components/sidebar/app-header.tsx`)
-- Wrap the existing `Bell` button in a `Link` or add an interactive routing action that redirects to `/dashboard/notifcations`.
-- Maintain a dynamic unread count indicator (red badge) based on local notifications state.
-
-### 1.2 User Navigation (`components/sidebar/nav-user.tsx`)
-- Wrap the existing "Notifications" dropdown menu item in a `Link` pointing to `/dashboard/notifcations`.
-
-### 1.3 Breadcrumb Translation (`components/sidebar/app-header.tsx`)
-- In `app-header.tsx`, map the route segment `notifcations` to the user-friendly title `"Notifications"` inside the `DynamicBreadcrumbs` `labelMap` object so that the breadcrumb correctly reads "Dashboard > Notifications" instead of displaying the folder typo.
-
----
-
-## 2. Modular Component Details
-
-All components will be created under `components/dashboard/notifications`:
-
-### 2.1 `notifications-header.tsx`
-- **Responsibilities**:
-  - Displays the page title ("Notifications") and subtitle.
-  - Renders 3 mini summary cards:
-    1. **Total Notifications** (total count).
-    2. **Unread** (count of unread notifications, highlighted in brand colors).
-    3. **Critical Alerts** (count of notifications with `priority === "critical"`, highlighted in orange/red).
-  - Contains bulk action buttons: "Mark all as read" and "Clear all archived".
-
-### 2.2 `notifications-filter.tsx`
-- **Responsibilities**:
-  - Search bar input matching titles, descriptions, and user names.
-  - A tab-strip filtering by category: `All`, `Unread`, `Assets`, `Security`, `Organization`, `System`.
-  - A priority filter selector (dropdown menu matching `All`, `Info`, `Warning`, `Critical`).
-
-### 2.3 `notification-item.tsx`
-- **Responsibilities**:
-  - Renders a single notification card with a modern, glassmorphic layout.
-  - Highlights the unread state with an left border accent and semi-bold text.
-  - Maps categories to descriptive `lucide-react` icons (e.g. `FilePlus` for asset addition, `UserCheck` for organization invites, `ShieldAlert` for security issues).
-  - Displays metadata: Relative time, causer/user avatar, and category pill.
-  - Hosts hover controls: Check icon to toggle Read/Unread, Archive/Delete icon, and a button to view details.
-
-### 2.4 `notification-details-dialog.tsx`
-- **Responsibilities**:
-  - Opens a Dialog showing full details of a clicked notification.
-  - Renders detailed properties:
-    - **Triggered By**: Causer avatar, name, and email.
-    - **Entity details**: Specific asset SKU, project context, or invite details.
-    - **Changes/State**: A table-based format showcasing "Property", "Before value", and "After value" for update operations.
-    - **Action**: Provides an actionable primary button to navigate to the related record (e.g. `View Asset`, `View Project`).
-
-### 2.5 `notifications-list.tsx`
-- **Responsibilities**:
-  - Acts as the state coordinator.
-  - Initialized with realistic mock notification data containing varied types, dates, priorities, and changes.
-  - Integrates with `localStorage` to persist read, archived, and deleted states so the user has an interactive, real-time experience.
-  - Performs local search, categorization, and filter queries.
-  - Implements smooth layout animation transitions (using framer-motion if installed, or CSS transitions).
-  - Displays a clean empty state with a search/inbox-empty icon and a "Clear filters" suggestion.
-
----
-
-## 3. Mock Data Structure
-
-Notifications will conform to the following TypeScript interface (extending or mirroring the domain `Activity` type):
-
-```typescript
-export interface NotificationItem {
-  id: string;
-  type: "assets" | "security" | "organization" | "system";
-  action: string;
-  title: string;
-  description: string;
-  priority: "info" | "warning" | "critical";
-  isRead: boolean;
-  isArchived: boolean;
-  created_at: string;
-  user_name?: string;
-  entity_name?: string;
-  entity_type?: string;
-  entity_id?: string;
-  changes?: {
-    before?: Record<string, string | number | boolean>;
-    after?: Record<string, string | number | boolean>;
-  };
-  causer?: {
-    name: string;
-    email: string;
-    avatar?: string;
-  };
-}
+```
+app/dashboard/notifications/
+  └── page.tsx                         # Page entry rendering <NotificationsList />
+components/dashboard/notifications/
+  ├── mock-data.ts                     # Pre-populated high-quality events
+  ├── notifications-list.tsx           # Main container component (filtering, list wrapper)
+  ├── notification-item.tsx            # Single notification card component
+  ├── notifications-filter.tsx         # Tab filter & search components
+  ├── notifications-header.tsx         # Header component with "Mark all as read" & stats
+  └── notification-details-dialog.tsx  # Detailed popup for inspectable events (diffs)
+actions/
+  └── notification.actions.ts          # Server actions interfacing with Laravel endpoints
 ```
 
 ---
 
-## 4. Proposed File Checklist
+### Component Specifications
 
-### [NEW]
-- `components/dashboard/notifications/notifications-header.tsx`
-- `components/dashboard/notifications/notifications-filter.tsx`
-- `components/dashboard/notifications/notification-item.tsx`
-- `components/dashboard/notifications/notification-details-dialog.tsx`
-- `components/dashboard/notifications/notifications-list.tsx`
+#### 1. `mock-data.ts`
+Holds a list of realistic event objects containing:
+*   `id`: unique string/number
+*   `title`: Event summary
+*   `description`: Human-readable context
+*   `type`: `'system' | 'security' | 'organization' | 'asset'`
+*   `priority`: `'info' | 'warning' | 'critical'`
+*   `read`: boolean
+*   `created_at`: Date string
+*   `link`: optional target URL (e.g. `/dashboard/projects/12`)
+*   `changes`: optional diff metadata for category or asset changes (before/after objects)
 
-### [MODIFY]
-- `components/sidebar/app-header.tsx` (wire bell, add breadcrumb map)
-- `components/sidebar/nav-user.tsx` (wire drop-down item)
-- `app/dashboard/notifcations/page.tsx` (render `NotificationsList` container)
+#### 2. `notifications-list.tsx`
+Handles the core states:
+*   `notifications`: Array of active items
+*   `searchQuery`: string for matching title or description
+*   `activeTab`: `'all' | 'unread' | 'alerts' | 'system' | 'organization'`
+*   `selectedNotification`: for opening the detail dialog
+*   Functions: `handleMarkRead(id)`, `handleMarkAllRead()`, `handleDelete(id)`.
+
+#### 3. `notification-item.tsx`
+Renders using Lucide icons depending on the type and priority:
+*   `warning` / `critical` -> Amber / Red warning shields or exclamation signs.
+*   `organization` -> User/Org group icons.
+*   `system` -> Server or database icons.
+*   Optimistic state indicators (unread dot, hover state, transition on status change).
+
+#### 4. `notification-details-dialog.tsx`
+Utilizes Radix UI Dialog / Shadcn Dialog to present:
+*   Full context description.
+*   Interactive JSON comparison or diff table if changes are present.
+*   Clickable quick-link to inspect the related asset/project directly.
+
+#### 5. `notification.actions.ts`
+Exports async functions:
+*   `getNotifications()`
+*   `markAsRead(id)`
+*   `markAllAsRead()`
+*   `deleteNotification(id)`
+
+---
+
+## Verification Plan
+
+### Manual Verification
+1. Navigate to `/dashboard/notifications` by clicking the notification bell in the header or the "Notifications" option in the User Profile dropdown.
+2. Verify that dynamic breadcrumbs correctly format the path `/dashboard/notifications` as `Notifications` (rather than any typo variant).
+3. Test filters (All, Unread, Security, System, Organization) to verify correct subset listings.
+4. Run searches in the search bar and verify matching items highlight or filter correctly.
+5. Click a notification to open the detail dialog, validating the details display.
+6. Click "Mark as Read" and verify the unread count/state updates dynamically.
+7. Click "Mark all as read" and inspect the header counter updating to zero.
+8. Delete a notification and verify it is permanently removed from the view.
