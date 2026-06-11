@@ -10,6 +10,7 @@ export default async function DashboardOverviewPage() {
     projectCount: 0,
     categoryCount: 0,
     assetCount: 0,
+    memberCount: 0,
     monthlyGrowth: 0,
   };
 

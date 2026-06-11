@@ -22,6 +22,7 @@ export async function getDashboardSummary(
         projectCount: 0,
         categoryCount: 0,
         assetCount: 0,
+        memberCount: 0,
         monthlyGrowth: 0,
       },
       chartData,
@@ -39,7 +40,7 @@ export async function getDashboardSummary(
     console.error("Error fetching dashboard from Laravel API:", error);
     return {
       data: {
-        stats: { projectCount: 0, categoryCount: 0, assetCount: 0, monthlyGrowth: 0 },
+        stats: { projectCount: 0, categoryCount: 0, assetCount: 0, memberCount: 0, monthlyGrowth: 0 },
         chartData: [],
         activities: [],
         members: [],
