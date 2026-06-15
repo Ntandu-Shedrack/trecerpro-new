@@ -51,7 +51,7 @@ export function DashboardMetrics({ stats }: DashboardMetricsProps) {
   const isGrowthPositive = stats.monthlyGrowth >= 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4 py-4 px-4 sm:px-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-2 py-4 px-4 sm:px-6">
       <MetricCard
         title="Total Projects"
         value={stats.projectCount.toLocaleString()}

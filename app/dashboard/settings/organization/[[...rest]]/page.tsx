@@ -21,7 +21,7 @@ const TABS = [
 
 export default function OrganizationSettingsPage() {
   return (
-    <div className="mx-auto space-y-6 py-6">
+    <div className="mx-auto space-y-6 py-4 px-4 sm:px-6">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">
           Organization Workspace Settings

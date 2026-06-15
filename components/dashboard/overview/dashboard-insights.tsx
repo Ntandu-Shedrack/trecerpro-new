@@ -26,16 +26,17 @@ export function DashboardInsights({
   categoryDistribution,
   lifecycleDistribution
 }: DashboardInsightsProps) {
-  // Standard color palette for category distribution area chart
-  const primaryColor = "hsl(var(--primary))";
+  // CSS variables aligned to global CSS schema (colors are oklch — no hsl() wrapper needed)
+  const primaryColor = "var(--primary)";
+  const activeColor = "var(--chart-2)";
 
-  // Map lifecycle statuses to harmonious semantic colors
+  // Map lifecycle statuses to global chart CSS variables
   const getStatusColor = (status: string) => {
     const s = status.toLowerCase();
-    if (s.includes("deploy") || s.includes("use") || s.includes("active")) return "#10B981"; // emerald-500
-    if (s.includes("maintain") || s.includes("repair")) return "#F97316"; // orange-500
-    if (s.includes("retired") || s.includes("dispose")) return "#64748B"; // slate-500
-    return "#3B82F6"; // default blue-500 for In Stock
+    if (s.includes("deploy") || s.includes("use") || s.includes("active")) return "var(--chart-2)"; // teal/green
+    if (s.includes("maintain") || s.includes("repair")) return "var(--chart-5)"; // amber/warning
+    if (s.includes("retired") || s.includes("dispose")) return "var(--chart-3)"; // slate/muted
+    return "var(--primary)"; // default brand blue for In Stock
   };
 
   const lifecycle = lifecycleDistribution.map((item) => ({
@@ -44,7 +45,7 @@ export function DashboardInsights({
   }));
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-4">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-2 py-4 px-4 sm:px-6">
       {/* Left: Asset Distribution (Area Chart matching requested styling) */}
       <Card className="border-border bg-card/75 backdrop-blur-md transition-all duration-300 hover:border-primary/20">
         <CardContent className="p-6">
@@ -77,33 +78,30 @@ export function DashboardInsights({
                 <AreaChart data={categoryDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorUnits" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="colorActive" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                      <stop offset="5%" stopColor="var(--chart-2)" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="var(--chart-2)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
                     strokeDasharray="4 4"
                     vertical={false}
-                    stroke="hsl(var(--muted-foreground))"
-                    opacity={0.05}
+                    stroke="var(--border)"
                   />
                   <XAxis
                     dataKey="name"
-                    stroke="hsl(var(--foreground))"
-                    fontSize={11}
-                    fontWeight={500}
+                    stroke="var(--muted-foreground)"
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: 500 }}
                     tickLine={false}
                     axisLine={false}
                     dy={10}
                   />
                   <YAxis
-                    stroke="hsl(var(--foreground))"
-                    fontSize={11}
-                    fontWeight={500}
+                    stroke="var(--muted-foreground)"
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: 500 }}
                     tickLine={false}
                     axisLine={false}
                     tickFormatter={(value) => `${value}`}
@@ -115,9 +113,9 @@ export function DashboardInsights({
                       borderRadius: "0.5rem",
                       color: "var(--foreground)",
                     }}
-                    formatter={(value: any, name: any) => {
-                      const v = typeof value === "number" ? value : Number(value ?? 0);
-                      const seriesName = name === "units" ? "Total Units" : "Active Units";
+                    formatter={(value: unknown, name: unknown) => {
+                      const v = typeof value === "number" ? value : Number(String(value ?? 0));
+                      const seriesName = String(name) === "units" ? "Total Units" : "Active Units";
                       return [v.toLocaleString(), seriesName] as [string, string];
                     }}
                   />
@@ -135,12 +133,12 @@ export function DashboardInsights({
                   <Area
                     type="monotone"
                     dataKey="active"
-                    stroke="#10B981"
+                    stroke={activeColor}
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#colorActive)"
                     dot={false}
-                    activeDot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: "#10B981" }}
+                    activeDot={{ r: 4, stroke: "var(--card)", strokeWidth: 2, fill: activeColor }}
                     animationDuration={1500}
                   />
                 </AreaChart>
@@ -201,9 +199,9 @@ export function DashboardInsights({
                       borderRadius: "0.5rem",
                       color: "var(--foreground)",
                     }}
-                    formatter={(value: any, name: any) => {
-                      const v = typeof value === "number" ? value : Number(value ?? 0);
-                      return [v.toLocaleString(), name ?? ""] as [string, string];
+                    formatter={(value: unknown, name: unknown) => {
+                      const v = typeof value === "number" ? value : Number(String(value ?? 0));
+                      return [v.toLocaleString(), String(name ?? "")] as [string, string];
                     }}
                   />
                 </PieChart>

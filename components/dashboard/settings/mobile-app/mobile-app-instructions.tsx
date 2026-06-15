@@ -2,14 +2,14 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { 
-  Smartphone, 
-  QrCode, 
-  Download, 
-  Apple, 
-  PlayCircle, 
-  CheckCircle2, 
-  Info, 
+import {
+  Smartphone,
+  QrCode,
+  Download,
+  Apple,
+  PlayCircle,
+  CheckCircle2,
+  Info,
   ShieldCheck,
   Zap,
   History
@@ -70,7 +70,7 @@ export function MobileAppInstructions() {
   ];
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-8 py-4 px-4 sm:px-6">
       <div className="flex flex-col gap-2">
         <h2 className="text-3xl font-bold tracking-tight">Mobile Application</h2>
         <p className="text-muted-foreground text-lg">
@@ -145,12 +145,12 @@ export function MobileAppInstructions() {
             <div className="relative hidden md:block">
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/5 to-transparent rounded-3xl blur-3xl -z-10" />
               <Card className="h-full border-0 shadow-2xl bg-card/50 backdrop-blur-sm overflow-hidden flex flex-col items-center justify-center p-12 relative">
-                  <div className="w-64 h-[500px] border-[8px] border-border rounded-[3rem] shadow-xl overflow-hidden relative bg-background mx-auto">
-                    <div className="absolute top-0 inset-x-0 h-14 bg-background border-b flex items-center justify-center font-semibold z-10">
-                      TracerPro
-                    </div>
-                    <div className="absolute top-14 inset-x-0 bottom-0 bg-muted/30 p-4 flex flex-col gap-4">
-                        <style>{`
+                <div className="w-64 h-[500px] border-[8px] border-border rounded-[3rem] shadow-xl overflow-hidden relative bg-background mx-auto">
+                  <div className="absolute top-0 inset-x-0 h-14 bg-background border-b flex items-center justify-center font-semibold z-10">
+                    TracerPro
+                  </div>
+                  <div className="absolute top-14 inset-x-0 bottom-0 bg-muted/30 p-4 flex flex-col gap-4">
+                    <style>{`
                           @keyframes scan {
                             0%, 100% { top: 10%; }
                             50% { top: 90%; }
@@ -159,28 +159,28 @@ export function MobileAppInstructions() {
                             animation: scan 3s ease-in-out infinite;
                           }
                         `}</style>
-                        <div className="h-48 bg-card rounded-2xl shadow-sm border flex items-center justify-center flex-col gap-2 relative overflow-hidden group cursor-pointer">
-                            <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
-                            <QrCode className="size-12 text-primary" />
-                            <span className="font-medium text-sm text-muted-foreground group-hover:text-primary transition-colors">Ready to Scan</span>
-                            <div className="absolute inset-x-4 h-0.5 bg-primary/50 shadow-[0_0_8px_2px_rgba(var(--primary),0.5)] animate-scan" />
+                    <div className="h-48 bg-card rounded-2xl shadow-sm border flex items-center justify-center flex-col gap-2 relative overflow-hidden group cursor-pointer">
+                      <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+                      <QrCode className="size-12 text-primary" />
+                      <span className="font-medium text-sm text-muted-foreground group-hover:text-primary transition-colors">Ready to Scan</span>
+                      <div className="absolute inset-x-4 h-0.5 bg-primary/50 shadow-[0_0_8px_2px_rgba(var(--primary),0.5)] animate-scan" />
+                    </div>
+                    <div className="flex flex-col gap-2 mt-4">
+                      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Recent Activity</div>
+                      {[1, 2].map((i) => (
+                        <div key={i} className="h-16 bg-card rounded-xl shadow-sm border p-3 flex items-center gap-3">
+                          <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <CheckCircle2 className="size-5 text-primary" />
+                          </div>
+                          <div className="flex flex-col gap-1 flex-1">
+                            <div className="h-2 w-1/2 bg-muted rounded" />
+                            <div className="h-2 w-3/4 bg-muted rounded" />
+                          </div>
                         </div>
-                        <div className="flex flex-col gap-2 mt-4">
-                            <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest pl-1">Recent Activity</div>
-                            {[1, 2].map((i) => (
-                              <div key={i} className="h-16 bg-card rounded-xl shadow-sm border p-3 flex items-center gap-3">
-                                  <div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-                                      <CheckCircle2 className="size-5 text-primary" />
-                                  </div>
-                                  <div className="flex flex-col gap-1 flex-1">
-                                      <div className="h-2 w-1/2 bg-muted rounded" />
-                                      <div className="h-2 w-3/4 bg-muted rounded" />
-                                  </div>
-                              </div>
-                            ))}
-                        </div>
+                      ))}
                     </div>
                   </div>
+                </div>
               </Card>
             </div>
           </div>
@@ -189,31 +189,31 @@ export function MobileAppInstructions() {
         <TabsContent value="features" className="mt-6 flex flex-col gap-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="flex flex-col gap-3 p-6">
-               <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                 <ShieldCheck className="size-6 text-primary" />
-               </div>
-               <div className="flex flex-col gap-1">
-                 <h4 className="font-bold text-lg">Secure Verification</h4>
-                 <p className="text-sm text-muted-foreground">Encrypted asset verification ensures data integrity and authenticity at every scan.</p>
-               </div>
+              <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <ShieldCheck className="size-6 text-primary" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h4 className="font-bold text-lg">Secure Verification</h4>
+                <p className="text-sm text-muted-foreground">Encrypted asset verification ensures data integrity and authenticity at every scan.</p>
+              </div>
             </Card>
             <Card className="flex flex-col gap-3 p-6">
-               <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                 <Zap className="size-6 text-primary" />
-               </div>
-               <div className="flex flex-col gap-1">
-                 <h4 className="font-bold text-lg">Instant Results</h4>
-                 <p className="text-sm text-muted-foreground">Blazing fast QR code recognition with near-zero latency response for quick audits.</p>
-               </div>
+              <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Zap className="size-6 text-primary" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h4 className="font-bold text-lg">Instant Results</h4>
+                <p className="text-sm text-muted-foreground">Blazing fast QR code recognition with near-zero latency response for quick audits.</p>
+              </div>
             </Card>
             <Card className="flex flex-col gap-3 p-6">
-               <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                 <History className="size-6 text-primary" />
-               </div>
-               <div className="flex flex-col gap-1">
-                 <h4 className="font-bold text-lg">Offline History</h4>
-                 <p className="text-sm text-muted-foreground">Access your recent scans and cached asset data even without an active internet connection.</p>
-               </div>
+              <div className="size-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                <History className="size-6 text-primary" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <h4 className="font-bold text-lg">Offline History</h4>
+                <p className="text-sm text-muted-foreground">Access your recent scans and cached asset data even without an active internet connection.</p>
+              </div>
             </Card>
           </div>
 

@@ -26,7 +26,7 @@ export default function ProfilePage() {
   const is2faActive = !!rawUser.two_factor_confirmed_at;
 
   return (
-    <div className="w-full py-8 px-4 sm:px-6 space-y-8 animate-in fade-in duration-300">
+    <div className="w-full py-4 px-4 sm:px-6 space-y-8 animate-in fade-in duration-300">
 
       {/* Premium Profile Header Card */}
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-6 transition-all duration-300 hover:shadow-md">
@@ -65,7 +65,7 @@ export default function ProfilePage() {
             <span className="hidden sm:inline text-muted-foreground/45">•</span>
             <span className="flex items-center gap-1.5">
               <Calendar className="h-4 w-4 text-muted-foreground/70" />
-              Member since {new Date(rawUser.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long" })}
+              Member since {new Date(rawUser.created_at ?? "").toLocaleDateString(undefined, { year: "numeric", month: "long" })}
             </span>
           </div>
         </div>

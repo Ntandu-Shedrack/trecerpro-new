@@ -198,8 +198,8 @@ export interface DashboardChartPoint {
 export interface DashboardCategoryItem {
   name: string;
   value: number;
-  /** Alias for value — used by some chart components */
-  units?: number;
+  /** Total units — used as the primary dataKey by the Asset Distribution area chart */
+  units: number;
   color?: string;
 }
 

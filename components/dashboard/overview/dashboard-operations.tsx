@@ -67,7 +67,7 @@ const alertColorMap: Record<
 
 export function DashboardOperations() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-2 py-4 px-4 sm:px-6">
       {/* Regional Distribution */}
       <Card className="lg:col-span-2 relative overflow-hidden border-border bg-card/75 backdrop-blur-md shadow-md hover:shadow-lg hover:border-primary/20 transition-all duration-300">
         <CardContent className="p-6">

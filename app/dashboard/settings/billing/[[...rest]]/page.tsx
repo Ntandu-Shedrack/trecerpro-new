@@ -17,7 +17,7 @@ const TABS = [
 export default function BillingSettingsPage() {
   const params = useParams();
   const router = useRouter();
-  
+
   // rest is an array from [[...rest]]
   const rest = params?.rest as string[] | undefined;
   const currentTab = rest?.[0] || "plans";
@@ -31,7 +31,7 @@ export default function BillingSettingsPage() {
   };
 
   return (
-    <div className="mx-auto space-y-6 py-6">
+    <div className="mx-auto space-y-6 py-4 px-4 sm:px-6">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">
           Organization Billing
@@ -42,8 +42,8 @@ export default function BillingSettingsPage() {
       </div>
       <Separator />
 
-      <Tabs 
-        value={currentTab} 
+      <Tabs
+        value={currentTab}
         onValueChange={handleTabChange}
         className="space-y-6"
       >

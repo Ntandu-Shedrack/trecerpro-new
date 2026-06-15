@@ -84,7 +84,7 @@ export function DashboardActivity() {
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-4">
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-2 py-4 px-4 sm:px-6">
       {/* Recent Scans */}
       <Card className="border-border bg-card/75 backdrop-blur-md shadow-md hover:shadow-lg hover:border-primary/20 transition-all duration-300">
         <div className="flex items-center justify-between p-6 border-b border-border bg-muted/20 rounded-t-xl">

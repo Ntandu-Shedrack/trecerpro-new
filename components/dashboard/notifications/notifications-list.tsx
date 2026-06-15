@@ -120,7 +120,7 @@ export function NotificationsList() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <Card className="border-border bg-card/60 backdrop-blur-md shadow-md max-w-4xl mx-auto">
+    <Card className="border-border bg-card/60 backdrop-blur-md shadow-md mx-auto py-4 px-4 sm:px-6">
       <NotificationsHeader
         unreadCount={unreadCount}
         totalCount={notifications.length}

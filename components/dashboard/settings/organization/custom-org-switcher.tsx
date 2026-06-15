@@ -26,11 +26,15 @@ import {
 
 import { useOrganization, useOrganizationList, useAuthContext } from "@/context/auth-context";
 import { toast } from "sonner";
+import { useSidebar } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 export function CustomOrgSwitcher() {
   const { organization } = useOrganization();
   const { createOrganization } = useAuthContext();
   const { userMemberships, setActive, isLoaded } = useOrganizationList();
+  const { state, isMobile } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   const [isCreateOpen, setIsCreateOpen] = React.useState(false);
   const [newOrgName, setNewOrgName] = React.useState("");
@@ -83,7 +87,10 @@ export function CustomOrgSwitcher() {
         <DropdownMenuTrigger asChild disabled={isSwitching}>
           <Button
             variant="ghost"
-            className="w-full justify-between px-2 py-2 h-auto hover:bg-sidebar-accent"
+            className={cn(
+              "w-full justify-between px-2 py-2 h-auto hover:bg-sidebar-accent",
+              isCollapsed ? "justify-center px-0 h-9 w-9 mx-auto" : "mr-2"
+            )}
             disabled={isSwitching}
           >
             <div className="flex items-center gap-2">
@@ -97,7 +104,7 @@ export function CustomOrgSwitcher() {
                   alt={organization.name}
                   width={28}
                   height={28}
-                  className="rounded-md"
+                  className="rounded-md object-cover"
                 />
               ) : (
                 <div className="h-7 w-7 rounded-md bg-muted flex items-center justify-center">
@@ -105,21 +112,28 @@ export function CustomOrgSwitcher() {
                 </div>
               )}
 
-              <div className="flex flex-col text-left">
-                <span className="text-sm font-medium leading-none">
-                  {isSwitching ? "Switching..." : (organization?.name || "Select organization")}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {organization ? "Active organization" : "No organization"}
-                </span>
-              </div>
+              {!isCollapsed && (
+                <div className="flex flex-col text-left">
+                  <span className="text-sm font-medium leading-none">
+                    {isSwitching ? "Switching..." : (organization?.name || "Select organization")}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {organization ? "Active organization" : "No organization"}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <ChevronsUpDown className="h-4 w-4 text-muted-foreground" />
+            {!isCollapsed && <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" />}
           </Button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" className="w-64 rounded-xl text-foreground bg-background">
+        <DropdownMenuContent
+          align={isCollapsed ? "center" : "start"}
+          side={isMobile ? "bottom" : "right"}
+          sideOffset={8}
+          className="w-64 rounded-xl text-foreground bg-background"
+        >
           <DropdownMenuLabel>Organizations</DropdownMenuLabel>
 
           <DropdownMenuSeparator />
